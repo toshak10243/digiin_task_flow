@@ -1,0 +1,28 @@
+# Environment and secrets
+.env
+GmailAppPassword
+app pass.png
+app.zip
+
+# Credentials
+config/credentials/*.json
+!config/credentials/*.example
+
+# Composer Dependencies
+/vendor/
+
+# User Uploads and temporary files
+/uploads/*
+!/uploads/.gitkeep
+/scratch/
+error_log
+**/error_log
+*.log
+**/*.log
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

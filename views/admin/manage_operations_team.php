@@ -1,0 +1,235 @@
+<?php
+require_once "../../app/middleware/AdminMiddleware.php";
+require_once "../../app/controllers/UserController.php";
+
+$controller = new UserController();
+$success = "";
+
+// Create User
+if(isset($_POST['create'])){
+    $res = $controller->createUser($_POST);
+    if($res === true) $success="created";
+}
+
+// Remove
+if(isset($_GET['remove'])){
+    $controller->deactivateUser($_GET['remove']);
+    header("Location: manage_operations_team.php");
+    exit;
+}
+
+// Update
+if(isset($_POST['update'])){
+    $controller->updateUserDetails($_POST['user_id'], $_POST['name'], $_POST['password']);
+    header("Location: manage_operations_team.php?updated=1");
+    exit;
+}
+
+$teamUsers = $controller->getUsersByRole('operations_team');
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Operations Team | Digiink Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+    .custom-card { background: #ffffff; border: 1px solid #eef2f6; border-radius: 24px; }
+    .input-style { 
+        background: #fcfdfe;
+        border: 1.5px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+    .input-style:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        outline: none;
+    }
+    /* Table Grid Line Styling */
+    th, td { border: 1px solid #f1f5f9; }
+</style>
+</head>
+
+<body class="text-slate-900">
+
+<div class="flex min-h-screen">
+    <?php include "partials/sidebar.php"; ?>
+
+    <main class="flex-1 p-6 lg:p-10 space-y-8">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
+                    <span class="p-2 bg-emerald-600 rounded-xl shadow-lg">
+                        <span class="material-icons-round text-white">groups</span>
+                    </span>
+                    Operations Team Management
+                </h1>
+                <p class="text-slate-500 mt-1 font-medium italic">Manage accounts and permissions for Team Experts.</p>
+            </div>
+            <div class="bg-white px-5 py-2.5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3 font-bold text-slate-700">
+                <span class="text-xs uppercase text-slate-400 tracking-widest border-r pr-3 border-slate-100">Total Members</span>
+                <?= count($teamUsers) ?>
+            </div>
+        </div>
+
+        <div class="custom-card p-8 shadow-xl shadow-slate-200/50 max-w-4xl border-l-4 border-l-emerald-600">
+            <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+                <span class="material-icons-round text-emerald-600 text-sm">person_add_alt</span> Register Team Member
+            </h2>
+            <form method="POST">
+                <input type="hidden" name="role" value="operations_team">
+                <input type="hidden" name="create" value="1">
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-500 ml-1 uppercase">Full Name</label>
+                        <input type="text" name="name" placeholder="Full Name" class="input-style w-full p-3.5 rounded-xl text-sm font-semibold" required>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-500 ml-1 uppercase">Username</label>
+                        <input type="text" name="username" placeholder="Username" class="input-style w-full p-3.5 rounded-xl text-sm font-semibold" required>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-500 ml-1 uppercase">Password</label>
+                        <input type="password" name="password" placeholder="Password" class="input-style w-full p-3.5 rounded-xl text-sm font-semibold" required>
+                    </div>
+                </div>
+
+                <button class="mt-8 bg-emerald-600 hover:bg-slate-900 text-white px-10 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-100 transition-all flex items-center gap-2">
+                    Create Team Member <span class="material-icons-round text-sm">group_add</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-[1.5rem] border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                            <th class="p-5 border-slate-100">Name</th>
+                            <th class="p-5 border-slate-100">Username</th>
+                            <th class="p-5 border-slate-100 text-center">Status</th>
+                            <th class="p-5 border-slate-100 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm">
+                        <?php if(empty($teamUsers)): ?>
+                        <tr>
+                            <td colspan="4" class="p-10 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                                <span class="material-icons-round block text-4xl mb-2">face_retouching_off</span>
+                                No Team Members listed
+                            </td>
+                        </tr>
+                        <?php endif; ?>
+
+                        <?php foreach($teamUsers as $u): ?>
+                        <tr class="hover:bg-slate-50/50 transition-colors">
+                            <td class="p-5 font-bold text-slate-700"><?= $u['name'] ?></td>
+                            <td class="p-5 text-slate-600 font-medium tracking-tight"><?= $u['username'] ?></td>
+                            <td class="p-5 text-center">
+                                <span class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase border border-emerald-100 tracking-tighter">Active</span>
+                            </td>
+                            <td class="p-5 text-center flex justify-center gap-3 border-none">
+                                <button onclick="openEditModal('<?= $u['id'] ?>','<?= $u['name'] ?>')" 
+                                    class="bg-amber-50 text-amber-600 px-4 py-2 rounded-xl text-[11px] font-black uppercase hover:bg-amber-600 hover:text-white transition-all border border-amber-100 flex items-center gap-1.5">
+                                    <span class="material-icons-round text-sm">edit</span> Edit
+                                </button>
+                                <a href="?remove=<?= $u['id'] ?>" 
+                                    class="bg-rose-50 text-rose-600 px-4 py-2 rounded-xl text-[11px] font-black uppercase hover:bg-rose-600 hover:text-white transition-all border border-rose-100 flex items-center gap-1.5"
+                                    onclick="return confirm('Disable access for this member?')">
+                                    <span class="material-icons-round text-sm">person_remove</span> Remove
+                                </a>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<div id="editModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden justify-center items-center p-4">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-white">
+        <div class="bg-emerald-600 p-8 text-white">
+            <h2 class="text-2xl font-black tracking-tight flex items-center gap-3">
+                <span class="material-icons-round">manage_accounts</span> Edit Team Member
+            </h2>
+            <p class="text-emerald-100 text-xs mt-1 font-medium italic">Update profile information for this expert.</p>
+        </div>
+
+        <form method="POST" class="p-8 space-y-6">
+            <input type="hidden" name="update" value="1">
+            <input type="hidden" id="edit_user_id" name="user_id">
+
+            <div class="space-y-1">
+                <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Account Full Name</label>
+                <input type="text" id="edit_name" name="name" class="input-style w-full p-4 rounded-2xl font-bold" required>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Reset Password</label>
+                <input type="password" name="password" placeholder="New Password (optional)" class="input-style w-full p-4 rounded-2xl font-bold">
+                <p class="text-[9px] text-slate-400 italic mt-1 px-1">*Only fill this if you want to change the password.</p>
+            </div>
+
+            <div class="flex flex-col gap-3 pt-4">
+                <button class="w-full bg-emerald-600 hover:bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-emerald-100 transition-all">
+                    Update Profile
+                </button>
+                <button type="button" onclick="closeModal()" class="w-full bg-slate-100 text-slate-500 py-3 rounded-2xl font-bold text-xs uppercase hover:bg-slate-200 transition-all tracking-widest">
+                    Discard
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditModal(id,name){
+    document.getElementById("edit_user_id").value=id;
+    document.getElementById("edit_name").value=name;
+    document.getElementById("editModal").classList.remove("hidden");
+    document.getElementById("editModal").classList.add("flex");
+}
+function closeModal(){
+    document.getElementById("editModal").classList.add("hidden");
+}
+</script>
+
+<?php if($success=="created"): ?>
+<script>
+Swal.fire({
+    icon:'success',
+    title:'Expert Added!',
+    text: 'Team member account created successfully',
+    confirmButtonColor:'#10b981',
+    customClass: { popup: 'rounded-[2rem]' }
+});
+</script>
+<?php endif; ?>
+
+<?php if(isset($_GET['updated'])): ?>
+<script>
+Swal.fire({
+    icon:'success',
+    title:'Profile Updated!',
+    text: 'Expert details modified successfully',
+    confirmButtonColor:'#10b981',
+    customClass: { popup: 'rounded-[2rem]' }
+});
+</script>
+<?php endif; ?>
+
+</body>
+</html>
