@@ -350,6 +350,11 @@ $pendingQcTasks = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
                                 <?php if($t['urgent']=='yes'): ?>
                                 <span class="bg-rose-100 text-rose-600 text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest border border-rose-200 animate-pulse">Urgent</span>
                                 <?php endif; ?>
+                                <?php if(!empty($t['additional_instructions'])): ?>
+                                <span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest flex items-center gap-1 shadow-xs">
+                                    <span class="material-icons-round text-xs text-amber-600">new_releases</span> Additional Info
+                                </span>
+                                <?php endif; ?>
                             </div>
                             <p class="text-sm text-slate-400 font-bold tracking-wide mt-0.5"><?= htmlspecialchars($t['task_name']) ?></p>
                         </div>
@@ -457,6 +462,24 @@ $pendingQcTasks = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
                         <div class="p-5 rounded-[1.5rem] bg-slate-50 border border-slate-100 text-sm text-slate-600 leading-relaxed min-h-[100px] max-h-40 overflow-y-auto content-scroll shadow-inner">
                             <?= !empty($t['instructions']) ? nl2br(htmlspecialchars($t['instructions'])) : '<span class="text-slate-300 italic font-medium text-xs uppercase tracking-widest">No original instructions provided</span>' ?>
                         </div>
+
+                        <!-- ⚡ Additional Instructions / Client Update (Highlighted) -->
+                        <?php if (!empty($t['additional_instructions'])): ?>
+                            <div class="p-5 rounded-[1.5rem] bg-amber-50/90 border-2 border-amber-300 shadow-sm relative overflow-hidden">
+                                <span class="material-icons-round text-amber-200/50 absolute -right-2 -bottom-2 text-6xl pointer-events-none">notification_important</span>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-[10px] font-black text-amber-900 uppercase tracking-widest flex items-center gap-1.5">
+                                        <span class="material-icons-round text-sm text-amber-600">new_releases</span> Additional Information / Client Update
+                                    </label>
+                                    <span class="text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300">
+                                        ⚡ Updated
+                                    </span>
+                                </div>
+                                <div class="text-xs text-amber-950 leading-relaxed font-semibold whitespace-pre-line relative z-10">
+                                    <?= nl2br(htmlspecialchars($t['additional_instructions'])) ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
 
                         <!-- Forwarded Client Feedback (From BDE via Operations Manager) -->
                         <?php if(!empty($t['feedback']) && ((int)($t['forwarded_feedback_to'] ?? 0) === (int)$_SESSION['user_id'] || (int)($t['assigned_to'] ?? 0) === (int)$_SESSION['user_id'])): ?>

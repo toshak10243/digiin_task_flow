@@ -279,6 +279,11 @@ function getStatusBadge($status) {
                                         <?php if (($t['urgent'] ?? '') === 'yes'): ?>
                                         <span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-[9px] font-black rounded uppercase tracking-wider">Urgent</span>
                                         <?php endif; ?>
+                                        <?php if (!empty($t['additional_instructions'])): ?>
+                                        <span class="px-1.5 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black rounded uppercase inline-flex items-center gap-0.5 shadow-xs" title="Additional instructions / updates from client">
+                                            <span class="material-icons-round text-[11px] text-amber-600">new_releases</span> Extra Info
+                                        </span>
+                                        <?php endif; ?>
                                     </div>
                                     <p class="text-[11px] text-slate-500 font-semibold truncate max-w-xs mt-0.5">
                                         <?= htmlspecialchars($t['task_name']) ?>

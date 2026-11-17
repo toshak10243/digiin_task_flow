@@ -135,6 +135,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['assigned_to'])) {
                                         <span class="material-icons text-[12px]">bolt</span> URGENT
                                     </span>
                                 <?php endif; ?>
+                                <?php if(!empty($t['additional_instructions'])): ?>
+                                    <span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
+                                        <span class="material-icons-round text-xs text-amber-600">new_releases</span> EXTRA INFO
+                                    </span>
+                                <?php endif; ?>
                             </div>
                             <p class="text-sm text-slate-500 font-medium"><?= htmlspecialchars($t['task_name']) ?></p>
                         </div>
@@ -212,6 +217,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['assigned_to'])) {
                         <span class="detail-label">Client Instructions</span>
                         <div class="instruction-box p-4 border border-slate-100 italic">
                             <?= nl2br(htmlspecialchars($t['instructions'])) ?>
+                        </div>
+
+                        <?php if(!empty($t['additional_instructions'])): ?>
+                        <div class="mt-1 p-3.5 rounded-xl bg-amber-50/90 border-2 border-amber-300 text-amber-950 text-xs font-semibold leading-relaxed relative overflow-hidden shadow-xs">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] font-black uppercase text-amber-900 flex items-center gap-1">
+                                    <span class="material-icons-round text-sm text-amber-600">new_releases</span>
+                                    Additional Information / Client Update
+                                </span>
+                                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300">⚡ Updated</span>
+                            </div>
+                            <div class="whitespace-pre-line mt-1">
+                                <?= nl2br(htmlspecialchars($t['additional_instructions'])) ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php elseif(!empty($t['additional_instructions'])): ?>
+                    <div class="flex flex-col gap-2">
+                        <span class="detail-label text-amber-800 font-bold">Additional Information / Client Update</span>
+                        <div class="p-3.5 rounded-xl bg-amber-50/90 border-2 border-amber-300 text-amber-950 text-xs font-semibold leading-relaxed whitespace-pre-line shadow-xs">
+                            <?= nl2br(htmlspecialchars($t['additional_instructions'])) ?>
                         </div>
                     </div>
                     <?php endif; ?>

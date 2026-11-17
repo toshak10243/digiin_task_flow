@@ -196,3 +196,4 @@ digiink-task-flow/
 ## 📄 License
 
 This software is proprietary and confidential. Developed for **DigiInk Solutions**. All rights reserved.
+

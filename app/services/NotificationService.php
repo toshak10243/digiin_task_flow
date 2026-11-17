@@ -169,12 +169,22 @@ class NotificationService
     }
 
     /**
-     * 9. Additional Files Uploaded -> Notify Operations Manager
+     * 9. Additional Files / Instructions Uploaded -> Notify Operations Manager & Assigned Expert
      */
-    public static function onAdditionalFilesUploaded(int $taskId, string $taskKey): void
+    public static function onAdditionalFilesUploaded(int $taskId, string $taskKey, ?int $assignedTo = null, bool $hasNotes = false): void
     {
-        $title = "📁 Additional files uploaded for {$taskKey}";
-        self::sendToRole(['operations_manager', 'admin'], $taskId, $title, 'additional_files');
+        $titleOm = $hasNotes 
+            ? "📌 Additional instructions & updates provided for {$taskKey}" 
+            : "📁 Additional files uploaded for {$taskKey}";
+        self::sendToRole(['operations_manager', 'admin'], $taskId, $titleOm, 'additional_files');
+
+        // Also notify assigned operations team member directly if task is already in their court
+        if ($assignedTo && $assignedTo > 0) {
+            $expertTitle = $hasNotes 
+                ? "⚠️ Important Client Update: Additional instructions provided for {$taskKey}" 
+                : "📁 Additional materials uploaded by client for {$taskKey}";
+            self::send($assignedTo, $taskId, $expertTitle, 'additional_files');
+        }
     }
 
     /**

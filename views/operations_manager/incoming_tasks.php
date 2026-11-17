@@ -260,6 +260,11 @@ if($searchQuery !== ''){
                                 <span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span> Urgent
                             </span>
                             <?php endif; ?>
+                            <?php if(!empty($t['additional_instructions'])): ?>
+                            <span class="flex items-center gap-1.5 bg-amber-50 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-xs">
+                                <span class="material-icons-round text-sm text-amber-600">new_releases</span> Extra Info
+                            </span>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -273,6 +278,21 @@ if($searchQuery !== ''){
                             <div class="mt-2 p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-sm text-slate-700 leading-relaxed max-h-40 overflow-y-auto custom-scrollbar">
                                 <?= !empty($t['instructions']) ? nl2br(htmlspecialchars($t['instructions'])) : '<span class="text-slate-400 italic">No instructions provided</span>' ?>
                             </div>
+
+                            <?php if (!empty($t['additional_instructions'])): ?>
+                                <div class="mt-3 p-4 rounded-xl bg-amber-50/90 border-2 border-amber-300 text-amber-950 leading-relaxed relative overflow-hidden shadow-xs">
+                                    <div class="flex items-center justify-between mb-1.5">
+                                        <span class="text-[10px] font-black uppercase tracking-wider text-amber-900 flex items-center gap-1">
+                                            <span class="material-icons-round text-sm text-amber-600">new_releases</span>
+                                            Additional Information / Client Update
+                                        </span>
+                                        <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300">⚡ Updated</span>
+                                    </div>
+                                    <div class="font-semibold text-xs whitespace-pre-line leading-relaxed">
+                                        <?= nl2br(htmlspecialchars($t['additional_instructions'])) ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="space-y-1">

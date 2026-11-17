@@ -510,8 +510,11 @@ if (file_exists($logoPath)) {
                                     <!-- Additional Files -->
                                     <td class="text-center">
                                         <?php if($t['status'] !== 'completed' && in_array($role, ['bde', 'admin'])): ?>
-                                            <a href="additional_files.php?task_id=<?= $t['id'] ?>" class="action-btn text-amber-500 hover:!bg-amber-500" title="Upload Extra">
-                                                <span class="material-icons-round text-sm">add_circle</span>
+                                            <a href="additional_files.php?task_id=<?= $t['id'] ?>" class="action-btn text-amber-500 hover:!bg-amber-500 relative" title="<?= !empty($t['additional_instructions']) ? 'Update Additional Info / Files' : 'Upload Extra Info / Files' ?>">
+                                                <span class="material-icons-round text-sm"><?= !empty($t['additional_instructions']) ? 'edit_note' : 'add_circle' ?></span>
+                                                <?php if(!empty($t['additional_instructions'])): ?>
+                                                    <span class="w-2 h-2 rounded-full bg-amber-500 absolute -top-0.5 -right-0.5 ring-2 ring-white"></span>
+                                                <?php endif; ?>
                                             </a>
                                         <?php elseif(!empty($t['additional_files'])): ?>
                                             <?php if(strpos($t['additional_files'], 'http') === 0): ?>

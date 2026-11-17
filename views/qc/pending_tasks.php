@@ -274,6 +274,20 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <div class="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100/60 text-sm text-slate-700 leading-relaxed max-h-40 overflow-y-auto custom-scrollbar">
                             <?= !empty($t['instructions']) ? nl2br(htmlspecialchars($t['instructions'])) : '<span class="text-slate-400 italic font-medium">No instructions provided</span>' ?>
                         </div>
+
+                        <?php if (!empty($t['additional_instructions'])): ?>
+                            <div class="p-4 rounded-2xl bg-amber-50/90 border-2 border-amber-300 text-sm text-amber-950 leading-relaxed mt-2 shadow-xs">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="text-[10px] font-black uppercase text-amber-900 flex items-center gap-1">
+                                        <span class="material-icons-round text-sm text-amber-600">new_releases</span> Additional Information / Client Update
+                                    </span>
+                                    <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300">⚡ Updated</span>
+                                </div>
+                                <div class="font-semibold text-xs whitespace-pre-line leading-relaxed">
+                                    <?= nl2br(htmlspecialchars($t['additional_instructions'])) ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Expert Submitted Work Notes Card -->
