@@ -16,11 +16,16 @@ class AdminTasksScreen extends StatefulWidget {
 
 class _AdminTasksScreenState extends State<AdminTasksScreen> {
   final _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   Timer? _debounceTimer;
   bool _isLoading = true;
   String _selectedStatus = 'all';
   DateTime? _selectedDate;
   List<TaskModel> _tasks = [];
+  int _currentPage = 1;
+  int _totalPages = 1;
+  int _totalTasks = 0;
+  final int _pageSize = 20;
 
   final List<Map<String, String>> _statusFilters = const [
     {'label': 'All', 'value': 'all'},
@@ -41,30 +46,45 @@ class _AdminTasksScreenState extends State<AdminTasksScreen> {
   void dispose() {
     _debounceTimer?.cancel();
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   void _onSearchChanged(String _) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 200), () {
-      _fetchTasks();
+      _currentPage = 1;
+      _fetchTasks(page: 1);
     });
   }
 
-  Future<void> _fetchTasks() async {
+  Future<void> _fetchTasks({int page = 1}) async {
     setState(() => _isLoading = true);
     final dateStr = _selectedDate != null ? DateFormat('yyyy-MM-dd').format(_selectedDate!) : 'all';
-    final result = await ApiService().getTasks(
+    final result = await ApiService().getTasksPaginated(
       date: dateStr,
       status: _selectedStatus,
       search: _searchController.text.trim(),
+      page: page,
+      limit: _pageSize,
     );
 
     if (!mounted) return;
     setState(() {
-      _tasks = result;
+      _tasks = result['tasks'] as List<TaskModel>;
+      _currentPage = result['page'] as int;
+      _totalPages = result['totalPages'] as int;
+      _totalTasks = result['total'] as int;
       _isLoading = false;
     });
+
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   Future<void> _pickDate() async {
@@ -77,13 +97,15 @@ class _AdminTasksScreenState extends State<AdminTasksScreen> {
 
     if (picked != null) {
       setState(() => _selectedDate = picked);
-      _fetchTasks();
+      _currentPage = 1;
+      _fetchTasks(page: 1);
     }
   }
 
   void _clearDateFilter() {
     setState(() => _selectedDate = null);
-    _fetchTasks();
+    _currentPage = 1;
+    _fetchTasks(page: 1);
   }
 
   @override
@@ -181,7 +203,7 @@ class _AdminTasksScreenState extends State<AdminTasksScreen> {
                     ],
                     const Spacer(),
                     Text(
-                      '${_tasks.length} tasks',
+                      _totalTasks > 0 ? '$_totalTasks tasks (Pg $_currentPage/$_totalPages)' : '${_tasks.length} tasks',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted),
                     ),
                   ],
@@ -219,7 +241,8 @@ class _AdminTasksScreenState extends State<AdminTasksScreen> {
                         onSelected: (val) {
                           if (val) {
                             setState(() => _selectedStatus = item['value']!);
-                            _fetchTasks();
+                            _currentPage = 1;
+                            _fetchTasks(page: 1);
                           }
                         },
                       );
@@ -261,9 +284,10 @@ class _AdminTasksScreenState extends State<AdminTasksScreen> {
                         ),
                       )
                     : RefreshIndicator(
-                        onRefresh: _fetchTasks,
+                        onRefresh: () => _fetchTasks(page: _currentPage),
                         color: AppColors.primary,
                         child: ListView.separated(
+                          controller: _scrollController,
                           padding: const EdgeInsets.all(16),
                           itemCount: _tasks.length,
                           separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -283,6 +307,140 @@ class _AdminTasksScreenState extends State<AdminTasksScreen> {
                           },
                         ),
                       ),
+          ),
+
+          // Pagination Bar (20 per page)
+          if (!_isLoading && _tasks.isNotEmpty)
+            _buildPaginationBar(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaginationBar() {
+    if (_totalPages <= 1) return const SizedBox.shrink();
+
+    List<int> pagesToShow = [];
+    if (_totalPages <= 5) {
+      pagesToShow = List.generate(_totalPages, (i) => i + 1);
+    } else {
+      if (_currentPage <= 3) {
+        pagesToShow = [1, 2, 3, 4, _totalPages];
+      } else if (_currentPage >= _totalPages - 2) {
+        pagesToShow = [1, _totalPages - 3, _totalPages - 2, _totalPages - 1, _totalPages];
+      } else {
+        pagesToShow = [1, _currentPage - 1, _currentPage, _currentPage + 1, _totalPages];
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Showing ${((_currentPage - 1) * _pageSize) + 1} - ${((_currentPage - 1) * _pageSize) + _tasks.length} of $_totalTasks tasks',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+              ),
+              Text(
+                'Page $_currentPage of $_totalPages',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Prev Button
+              OutlinedButton(
+                onPressed: _currentPage > 1 ? () => _fetchTasks(page: _currentPage - 1) : null,
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  side: BorderSide(color: _currentPage > 1 ? AppColors.border : AppColors.borderSubtle),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.chevron_left_rounded, size: 16),
+                    Text('Prev', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Page Numbers: 1, 2, 3 ... N
+              Flexible(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (int i = 0; i < pagesToShow.length; i++) ...[
+                        if (i > 0 && pagesToShow[i] > pagesToShow[i - 1] + 1)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4),
+                            child: Text('...', style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                          ),
+                        InkWell(
+                          onTap: () => _fetchTasks(page: pagesToShow[i]),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                            width: 30,
+                            height: 30,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: _currentPage == pagesToShow[i] ? AppColors.primary : AppColors.surfaceMuted,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _currentPage == pagesToShow[i] ? AppColors.primary : AppColors.border,
+                              ),
+                            ),
+                            child: Text(
+                              '${pagesToShow[i]}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: _currentPage == pagesToShow[i] ? Colors.white : AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Next Button
+              OutlinedButton(
+                onPressed: _currentPage < _totalPages ? () => _fetchTasks(page: _currentPage + 1) : null,
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  side: BorderSide(color: _currentPage < _totalPages ? AppColors.border : AppColors.borderSubtle),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Next', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    Icon(Icons.chevron_right_rounded, size: 16),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

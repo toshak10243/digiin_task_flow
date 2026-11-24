@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:digiink_app/core/constants/api_endpoints.dart';
 import 'package:digiink_app/data/models/admin_stats_model.dart';
+import 'package:digiink_app/data/models/notification_model.dart';
 import 'package:digiink_app/data/models/task_model.dart';
 import 'package:digiink_app/data/models/user_model.dart';
 
@@ -94,8 +95,14 @@ class ApiService {
   }
 
   // ─── ADMIN TASKS ─────────────────────────────────────────────
-  Future<List<TaskModel>> getTasks({String? date, String status = 'all', String search = ''}) async {
-    String url = '${ApiEndpoints.adminTasks}?status=$status&search=$search';
+  Future<Map<String, dynamic>> getTasksPaginated({
+    String? date,
+    String status = 'all',
+    String search = '',
+    int page = 1,
+    int limit = 20,
+  }) async {
+    String url = '${ApiEndpoints.adminTasks}?status=$status&search=$search&page=$page&limit=$limit';
     if (date != null && date != 'all') {
       url += '&date=$date';
     }
@@ -105,12 +112,38 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['tasks'] is List) {
-          return (data['tasks'] as List).map((t) => TaskModel.fromJson(t)).toList();
+          final tasks = (data['tasks'] as List).map((t) => TaskModel.fromJson(t)).toList();
+          final total = data['total'] is int ? data['total'] : int.tryParse(data['total']?.toString() ?? '0') ?? tasks.length;
+          final totalPages = data['total_pages'] is int ? data['total_pages'] : int.tryParse(data['total_pages']?.toString() ?? '1') ?? 1;
+          return {
+            'tasks': tasks,
+            'total': total,
+            'page': page,
+            'limit': limit,
+            'totalPages': totalPages,
+          };
         }
       }
     } catch (_) {}
 
-    return _getMockTasks(status: status, search: search);
+    final all = _getMockTasks(status: status, search: search);
+    final total = all.length;
+    final totalPages = (total / limit).ceil() > 0 ? (total / limit).ceil() : 1;
+    final startIndex = (page - 1) * limit;
+    final paged = startIndex < total ? all.skip(startIndex).take(limit).toList() : <TaskModel>[];
+
+    return {
+      'tasks': paged,
+      'total': total,
+      'page': page,
+      'limit': limit,
+      'totalPages': totalPages,
+    };
+  }
+
+  Future<List<TaskModel>> getTasks({String? date, String status = 'all', String search = ''}) async {
+    final res = await getTasksPaginated(date: date, status: status, search: search, page: 1, limit: 100);
+    return res['tasks'] as List<TaskModel>;
   }
 
   Future<TaskModel?> getTaskDetails(int id) async {
@@ -127,6 +160,62 @@ class ApiService {
 
     final list = _getMockTasks();
     return list.firstWhere((t) => t.id == id, orElse: () => list.first);
+  }
+
+  // ─── ADMIN NOTIFICATIONS ──────────────────────────────────────
+  Future<Map<String, dynamic>> getNotifications({
+    String type = 'all',
+    String search = '',
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    final url = '${ApiEndpoints.adminNotifications}?type=$type&search=$search&limit=$limit&offset=$offset';
+    try {
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['notifications'] is List) {
+          final items = (data['notifications'] as List)
+              .map((n) => NotificationModel.fromJson(n))
+              .toList();
+          final stats = data['stats'] is Map ? data['stats'] : {};
+          return {
+            'notifications': items,
+            'total': data['total'] ?? items.length,
+            'unread': stats['unread'] ?? 0,
+            'today': stats['today'] ?? 0,
+          };
+        }
+      }
+    } catch (_) {}
+
+    return _getMockNotifications(type: type, search: search);
+  }
+
+  Future<bool> markNotificationRead(int id) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiEndpoints.adminNotifications),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'action': 'mark_read', 'id': id}),
+      ).timeout(const Duration(seconds: 5));
+      return response.statusCode == 200;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  Future<bool> markAllNotificationsRead() async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiEndpoints.adminNotifications),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'action': 'mark_all_read'}),
+      ).timeout(const Duration(seconds: 5));
+      return response.statusCode == 200;
+    } catch (_) {
+      return true;
+    }
   }
 
   // ─── MOCK GENERATORS ─────────────────────────────────────────
@@ -294,7 +383,34 @@ class ApiService {
       ),
     ];
 
-    return all.where((t) {
+    // Generate additional realistic mock tasks so pagination (20 per page) can be previewed seamlessly
+    final List<TaskModel> extended = List.from(all);
+    for (int i = 5; i <= 45; i++) {
+      final base = all[i % all.length];
+      extended.add(TaskModel(
+        id: 100 + i,
+        taskKey: 'DI/NOV26/BATCH/${i.toString().padLeft(3, '0')}',
+        taskName: '${base.taskName} (Part $i)',
+        clientName: base.clientName,
+        deadline: base.deadline,
+        wordCount: base.wordCount,
+        university: base.university,
+        country: base.country,
+        subject: base.subject,
+        instructions: base.instructions,
+        additionalInstructions: base.additionalInstructions,
+        urgent: i % 4 == 0 ? 'yes' : 'no',
+        status: ['assigned', 'in_progress', 'completed', 'rework'][i % 4],
+        currentStage: base.currentStage,
+        expertName: base.expertName,
+        bdeName: base.bdeName,
+        driveClientLink: base.driveClientLink,
+        driveOperationsLink: base.driveOperationsLink,
+        createdAt: '2026-11-24 10:00:00',
+      ));
+    }
+
+    return extended.where((t) {
       final matchesStatus = (status == 'all') ||
           (status == 'urgent' && t.isUrgent) ||
           (t.status == status);
@@ -304,6 +420,110 @@ class ApiService {
           t.clientName.toLowerCase().contains(search.toLowerCase());
       return matchesStatus && matchesSearch;
     }).toList();
+  }
+
+  Map<String, dynamic> _getMockNotifications({String type = 'all', String search = ''}) {
+    final list = [
+      NotificationModel(
+        id: 1,
+        userId: 1,
+        taskId: 101,
+        taskKey: 'DI/NOV26/PEARL/071',
+        taskName: 'Saputo Inc. Financial Case Study',
+        taskStatus: 'in_progress',
+        title: 'New Task Created: DI/NOV26/PEARL/071 by Pearl BDE',
+        type: 'task_created',
+        isRead: false,
+        createdAt: '10 mins ago',
+      ),
+      NotificationModel(
+        id: 2,
+        userId: 1,
+        taskId: 101,
+        taskKey: 'DI/NOV26/PEARL/071',
+        taskName: 'Saputo Inc. Financial Case Study',
+        taskStatus: 'in_progress',
+        title: 'Feedback Added: "Include latest 2025 Q3 quarterly reports in appendix"',
+        type: 'feedback',
+        isRead: false,
+        createdAt: '25 mins ago',
+      ),
+      NotificationModel(
+        id: 3,
+        userId: 1,
+        taskId: 103,
+        taskKey: 'DI/NOV26/JSR/028',
+        taskName: 'Machine Learning Healthcare Predictive Model',
+        taskStatus: 'assigned',
+        title: 'Additional Files Attached: Supplemental CSV dataset synchronized to Drive',
+        type: 'additional_files',
+        isRead: true,
+        createdAt: '1 hour ago',
+      ),
+      NotificationModel(
+        id: 4,
+        userId: 1,
+        taskId: 102,
+        taskKey: 'DI/NOV26/DAMAN/065',
+        taskName: 'International Business Strategy Evaluation',
+        taskStatus: 'completed',
+        title: 'Task Completed: DI/NOV26/DAMAN/065 approved by QC Specialist',
+        type: 'task_completed',
+        isRead: true,
+        createdAt: '3 hours ago',
+      ),
+      NotificationModel(
+        id: 5,
+        userId: 1,
+        taskId: 104,
+        taskKey: 'DI/NOV26/NAR/060',
+        taskName: 'Operations Supply Chain Logistics Review',
+        taskStatus: 'rework',
+        title: 'Rework Required: Supply chain bottleneck chapter requires deeper analysis',
+        type: 'task_rework',
+        isRead: true,
+        createdAt: 'Yesterday',
+      ),
+      NotificationModel(
+        id: 6,
+        userId: 1,
+        taskId: 101,
+        taskKey: 'DI/NOV26/PEARL/071',
+        taskName: 'Saputo Inc. Financial Case Study',
+        taskStatus: 'in_progress',
+        title: 'Priority Escalation: Task marked as Urgent with 23:00 deadline',
+        type: 'urgent_task',
+        isRead: false,
+        createdAt: 'Yesterday',
+      ),
+    ];
+
+    final filtered = list.where((n) {
+      bool matchesType;
+      if (type == 'all') {
+        matchesType = true;
+      } else if (type == 'urgent') {
+        matchesType = n.type == 'urgent_task' || n.title.toLowerCase().contains('urgent');
+      } else if (type == 'feedback') {
+        matchesType = n.type == 'feedback' || n.title.toLowerCase().contains('feedback');
+      } else if (type == 'task') {
+        matchesType = n.type.startsWith('task') || n.type == 'additional_files';
+      } else {
+        matchesType = n.type == type;
+      }
+
+      final matchesSearch = search.isEmpty ||
+          n.title.toLowerCase().contains(search.toLowerCase()) ||
+          (n.taskKey?.toLowerCase().contains(search.toLowerCase()) ?? false);
+      return matchesType && matchesSearch;
+    }).toList();
+
+    return {
+      'notifications': filtered,
+      'total': filtered.length,
+      'unread': filtered.where((n) => !n.isRead).length,
+      'today': filtered.take(3).length,
+    };
   }
 }
 

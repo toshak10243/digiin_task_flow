@@ -12,5 +12,6 @@ class ApiEndpoints {
   static String get adminDashboard => '$baseUrl/admin/dashboard.php';
   static String get adminUsers => '$baseUrl/admin/users.php';
   static String get adminTasks => '$baseUrl/admin/tasks.php';
+  static String get adminNotifications => '$baseUrl/admin/notifications.php';
 }
 
