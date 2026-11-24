@@ -19,7 +19,11 @@ class UserCard extends StatelessWidget {
       case 'admin':
         return AppColors.roleAdmin;
       case 'operations_manager':
+      case 'om':
         return AppColors.roleOM;
+      case 'bdm':
+      case 'bdmanager':
+        return AppColors.roleBDM;
       case 'operations_team':
         return AppColors.roleTeam;
       case 'bde':

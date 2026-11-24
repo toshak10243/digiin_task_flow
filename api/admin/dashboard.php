@@ -133,6 +133,12 @@ try {
         GROUP BY role
     ")->fetchAll(PDO::FETCH_KEY_PAIR);
 
+    // Sync BDM & Manager keys for mobile & web compatibility
+    if (isset($roleCounts['bdmanager']) && !isset($roleCounts['bdm'])) {
+        $roleCounts['bdm'] = (int)$roleCounts['bdmanager'];
+    }
+    $roleCounts['managers'] = ((int)($roleCounts['operations_manager'] ?? 0)) + ((int)($roleCounts['bdmanager'] ?? 0));
+
     echo json_encode([
         'success' => true,
         'system_stats' => [

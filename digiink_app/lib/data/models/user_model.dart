@@ -47,16 +47,18 @@ class UserModel {
   };
 
   String get roleDisplay {
-    switch (role) {
+    switch (role.toLowerCase()) {
       case 'admin':
         return 'Super Admin';
       case 'operations_manager':
+      case 'om':
         return 'Ops Manager';
       case 'operations_team':
         return 'Ops Expert';
       case 'bde':
         return 'BDE';
       case 'bdm':
+      case 'bdmanager':
         return 'BDM';
       case 'qc':
         return 'Quality Control';

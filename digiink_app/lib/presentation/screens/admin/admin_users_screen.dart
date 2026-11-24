@@ -21,10 +21,11 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> with SingleTickerPr
 
   final List<Map<String, String>> _roleTabs = const [
     {'label': 'All Users', 'role': 'all'},
-    {'label': 'Ops Team', 'role': 'operations_team'},
-    {'label': 'Managers', 'role': 'operations_manager'},
-    {'label': 'BDE', 'role': 'bde'},
+    {'label': 'Managers', 'role': 'managers'},
     {'label': 'BDM', 'role': 'bdm'},
+    {'label': 'Ops Manager', 'role': 'operations_manager'},
+    {'label': 'Ops Team', 'role': 'operations_team'},
+    {'label': 'BDE', 'role': 'bde'},
     {'label': 'QC Team', 'role': 'qc'},
   ];
 
@@ -183,7 +184,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> with SingleTickerPr
                     DropdownMenuItem(value: 'operations_team', child: Text('Operations Team (Expert)')),
                     DropdownMenuItem(value: 'operations_manager', child: Text('Operations Manager')),
                     DropdownMenuItem(value: 'bde', child: Text('BDE (Sales)')),
-                    DropdownMenuItem(value: 'bdm', child: Text('BDM (Manager)')),
+                    DropdownMenuItem(value: 'bdmanager', child: Text('BDM (Business Development Manager)')),
                     DropdownMenuItem(value: 'qc', child: Text('Quality Control (QC)')),
                     DropdownMenuItem(value: 'admin', child: Text('Super Admin')),
                   ],

@@ -175,18 +175,32 @@ class ApiService {
 
   List<UserModel> _getMockUsers(String role, String search) {
     final all = [
-      UserModel(id: 1, name: 'Arushi Gupta', username: 'di.arushi2505', email: 'arushi@digiink.com', role: 'operations_manager', status: 'active', totalTasks: 184, totalWords: 480000),
-      UserModel(id: 2, name: 'Toshak Sharma', username: 'toshak_expert', email: 'toshak@digiink.com', role: 'operations_team', status: 'active', totalTasks: 96, totalWords: 245000),
-      UserModel(id: 3, name: 'Parth Patel', username: 'parth_expert', email: 'parth@digiink.com', role: 'operations_team', status: 'active', totalTasks: 84, totalWords: 198000),
-      UserModel(id: 4, name: 'Pearl BDE', username: 'pearl_bde', email: 'pearl@digiink.com', role: 'bde', status: 'active', totalTasks: 142, totalWords: 340000),
-      UserModel(id: 5, name: 'Daman Sales', username: 'daman_bde', email: 'daman@digiink.com', role: 'bde', status: 'active', totalTasks: 110, totalWords: 260000),
+      UserModel(id: 14, name: 'Arushi Gupta', username: 'di.arushi2505', email: 'arushi@digiink.com', role: 'operations_manager', status: 'active', totalTasks: 184, totalWords: 480000),
+      UserModel(id: 33, name: 'Suvjeet Nayak', username: 'suv.bdm', email: 'suvjeet@digiink.com', role: 'bdmanager', status: 'active', totalTasks: 120, totalWords: 310000),
+      UserModel(id: 28, name: 'Isha Khandelwal', username: 'di.bdm', email: 'isha@digiink.com', role: 'bdmanager', status: 'active', totalTasks: 95, totalWords: 240000),
+      UserModel(id: 27, name: 'Priya BDM', username: 'priya123', email: 'priya@digiink.com', role: 'bdmanager', status: 'inactive', totalTasks: 45, totalWords: 110000),
+      UserModel(id: 26, name: 'Toshak Sharma', username: 'toshak123', email: 'toshak@digiink.com', role: 'operations_team', status: 'active', totalTasks: 96, totalWords: 245000),
+      UserModel(id: 19, name: 'Parth Patel', username: 'di.parth2505', email: 'parth@digiink.com', role: 'operations_team', status: 'active', totalTasks: 84, totalWords: 198000),
+      UserModel(id: 36, name: 'Piyush Ops', username: 'di.piyush2505', email: 'piyush@digiink.com', role: 'operations_team', status: 'active', totalTasks: 62, totalWords: 154000),
+      UserModel(id: 38, name: 'Toshak BDE', username: 'toshak', email: 'toshak.sales@digiink.com', role: 'bde', status: 'active', totalTasks: 142, totalWords: 340000),
+      UserModel(id: 37, name: 'Tisha BDE', username: 'di.tisha2505', email: 'tisha@digiink.com', role: 'bde', status: 'active', totalTasks: 110, totalWords: 260000),
       UserModel(id: 6, name: 'Karan QC', username: 'karan_qc', email: 'karan@digiink.com', role: 'qc', status: 'active', totalTasks: 215, totalWords: 520000),
-      UserModel(id: 7, name: 'Kulwinder Ops', username: 'kulwinder_ops', email: 'kulwinder@digiink.com', role: 'operations_team', status: 'active', totalTasks: 62, totalWords: 154000),
-      UserModel(id: 8, name: 'Neha BDM', username: 'neha_bdm', email: 'neha@digiink.com', role: 'bdm', status: 'active', totalTasks: 90, totalWords: 210000),
     ];
 
     return all.where((u) {
-      final matchesRole = (role == 'all') || (u.role == role);
+      bool matchesRole;
+      if (role == 'all') {
+        matchesRole = true;
+      } else if (role == 'managers' || role == 'manager') {
+        matchesRole = u.role == 'operations_manager' || u.role == 'bdmanager' || u.role == 'bdm';
+      } else if (role == 'bdm' || role == 'bdmanager') {
+        matchesRole = u.role == 'bdmanager' || u.role == 'bdm';
+      } else if (role == 'operations_manager' || role == 'om') {
+        matchesRole = u.role == 'operations_manager';
+      } else {
+        matchesRole = u.role == role;
+      }
+
       final matchesSearch = search.isEmpty ||
           u.name.toLowerCase().contains(search.toLowerCase()) ||
           u.username.toLowerCase().contains(search.toLowerCase());

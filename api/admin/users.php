@@ -17,15 +17,25 @@ try {
 
     // ─── GET: List users by role ─────────────────────────────
     if ($method === 'GET') {
-        $role = $_GET['role'] ?? 'all';
+        $role = strtolower(trim($_GET['role'] ?? 'all'));
         $search = trim($_GET['search'] ?? '');
 
         $sql = "SELECT id, name, username, email, role, status, created_at FROM users WHERE 1=1";
         $params = [];
 
-        if ($role !== 'all' && in_array($role, ['admin', 'bdm', 'bde', 'operations_manager', 'operations_team', 'qc'])) {
-            $sql .= " AND role = :role";
-            $params[':role'] = $role;
+        if ($role !== 'all') {
+            if ($role === 'bdm' || $role === 'bdmanager') {
+                $sql .= " AND role IN ('bdmanager', 'bdm')";
+            } elseif ($role === 'managers' || $role === 'manager') {
+                $sql .= " AND role IN ('operations_manager', 'bdmanager', 'bdm')";
+            } elseif ($role === 'operations_manager' || $role === 'om') {
+                $sql .= " AND role = 'operations_manager'";
+            } elseif ($role === 'operations_team' || $role === 'expert') {
+                $sql .= " AND role = 'operations_team'";
+            } elseif (in_array($role, ['admin', 'bde', 'qc'])) {
+                $sql .= " AND role = :role";
+                $params[':role'] = $role;
+            }
         }
 
         if (!empty($search)) {
@@ -41,7 +51,7 @@ try {
         // Enrich with task count per user
         foreach ($users as &$u) {
             $u['id'] = (int)$u['id'];
-            if ($u['role'] === 'bde') {
+            if (in_array($u['role'], ['bde', 'bdm', 'bdmanager'])) {
                 $stmtC = $db->prepare("SELECT COUNT(*) as total_tasks, COALESCE(SUM(word_count),0) as total_words FROM tasks WHERE created_by = :uid");
             } else {
                 $stmtC = $db->prepare("SELECT COUNT(*) as total_tasks, COALESCE(SUM(word_count),0) as total_words FROM tasks WHERE assigned_to = :uid");
@@ -77,7 +87,11 @@ try {
             exit;
         }
 
-        if (!in_array($role, ['admin', 'bdm', 'bde', 'operations_manager', 'operations_team', 'qc'])) {
+        if ($role === 'bdm') {
+            $role = 'bdmanager'; // ensure DB ENUM compatibility
+        }
+
+        if (!in_array($role, ['admin', 'bdm', 'bdmanager', 'bde', 'operations_manager', 'operations_team', 'qc'])) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid role specified']);
             exit;

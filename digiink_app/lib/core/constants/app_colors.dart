@@ -34,6 +34,7 @@ class AppColors {
   // Role Badges
   static const Color roleAdmin = Color(0xFF4F46E5);
   static const Color roleOM = Color(0xFF0284C7);
+  static const Color roleBDM = Color(0xFF9333EA); // Purple 600
   static const Color roleTeam = Color(0xFF059669);
   static const Color roleBDE = Color(0xFFD97706);
   static const Color roleQC = Color(0xFF7C3AED);
@@ -41,6 +42,7 @@ class AppColors {
   // Aliases for convenience
   static const Color accent = Color(0xFF6366F1);
   static const Color bdeColor = roleBDE;
+  static const Color bdmColor = roleBDM;
   static const Color qcColor = roleQC;
   static const Color managerColor = roleOM;
 }
