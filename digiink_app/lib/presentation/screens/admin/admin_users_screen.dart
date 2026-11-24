@@ -119,9 +119,11 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> with SingleTickerPr
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Add New Team Member',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                    const Expanded(
+                      child: Text(
+                        'Add New Team Member',
+                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded, size: 20),
@@ -176,17 +178,36 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> with SingleTickerPr
                 // Role Dropdown
                 DropdownButtonFormField<String>(
                   initialValue: selectedRole,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'System Role',
                     prefixIcon: Icon(Icons.security_rounded, size: 20),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'operations_team', child: Text('Operations Team (Expert)')),
-                    DropdownMenuItem(value: 'operations_manager', child: Text('Operations Manager')),
-                    DropdownMenuItem(value: 'bde', child: Text('BDE (Sales)')),
-                    DropdownMenuItem(value: 'bdmanager', child: Text('BDM (Business Development Manager)')),
-                    DropdownMenuItem(value: 'qc', child: Text('Quality Control (QC)')),
-                    DropdownMenuItem(value: 'admin', child: Text('Super Admin')),
+                    DropdownMenuItem(
+                      value: 'operations_team',
+                      child: Text('Operations Team (Expert)', overflow: TextOverflow.ellipsis),
+                    ),
+                    DropdownMenuItem(
+                      value: 'operations_manager',
+                      child: Text('Operations Manager', overflow: TextOverflow.ellipsis),
+                    ),
+                    DropdownMenuItem(
+                      value: 'bde',
+                      child: Text('BDE (Sales)', overflow: TextOverflow.ellipsis),
+                    ),
+                    DropdownMenuItem(
+                      value: 'bdmanager',
+                      child: Text('BDM (Manager)', overflow: TextOverflow.ellipsis),
+                    ),
+                    DropdownMenuItem(
+                      value: 'qc',
+                      child: Text('Quality Control (QC)', overflow: TextOverflow.ellipsis),
+                    ),
+                    DropdownMenuItem(
+                      value: 'admin',
+                      child: Text('Super Admin', overflow: TextOverflow.ellipsis),
+                    ),
                   ],
                   onChanged: (val) {
                     if (val != null) setModalState(() => selectedRole = val);
