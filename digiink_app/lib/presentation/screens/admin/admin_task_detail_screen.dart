@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:digiink_app/core/constants/app_colors.dart';
 import 'package:digiink_app/data/models/task_model.dart';
 import 'package:digiink_app/data/services/api_service.dart';
@@ -416,16 +417,50 @@ class _AdminTaskDetailScreenState extends State<AdminTaskDetailScreen> {
     );
   }
 
+  Future<void> _openUrl(String rawUrl) async {
+    final trimmed = rawUrl.trim();
+    if (trimmed.isEmpty) return;
+
+    final parsed = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+        ? trimmed
+        : 'https://$trimmed';
+
+    final uri = Uri.tryParse(parsed);
+    if (uri == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Invalid link: $trimmed'), backgroundColor: AppColors.error),
+        );
+      }
+      return;
+    }
+
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (_) {
+      try {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not open link: $trimmed'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Widget _buildDriveBtn(String title, IconData icon, Color color, String? link) {
-    final hasLink = link != null && link.isNotEmpty;
+    final hasLink = link != null && link.trim().isNotEmpty;
     return InkWell(
-      onTap: hasLink
-          ? () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Drive Link: $link')),
-              );
-            }
-          : null,
+      onTap: hasLink ? () => _openUrl(link) : null,
+      onLongPress: hasLink ? () => _copyToClipboard(link, '$title Link') : null,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
@@ -453,6 +488,10 @@ class _AdminTaskDetailScreenState extends State<AdminTaskDetailScreen> {
                 ),
               ),
             ),
+            if (hasLink) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.open_in_new_rounded, size: 13, color: color.withOpacity(0.7)),
+            ],
           ],
         ),
       ),
@@ -494,6 +533,29 @@ class _AdminTaskDetailScreenState extends State<AdminTaskDetailScreen> {
                 style: const TextStyle(fontSize: 12, height: 1.5, color: AppColors.textPrimary, fontStyle: FontStyle.italic),
               ),
             ),
+          if (task.feedbackFiles.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'ATTACHED SCREENSHOTS / FILES',
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary, letterSpacing: 0.5),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: task.feedbackFiles.map((f) {
+                final fileStr = f.toString();
+                final fileName = fileStr.split('/').last;
+                return ActionChip(
+                  avatar: const Icon(Icons.attachment_rounded, size: 14, color: AppColors.primary),
+                  label: Text(fileName, style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                  backgroundColor: AppColors.primaryLight,
+                  side: const BorderSide(color: AppColors.border),
+                  onPressed: () => _openUrl(fileStr),
+                );
+              }).toList(),
+            ),
+          ],
         ],
       ),
     );
