@@ -153,33 +153,70 @@ The system enforces strict permission boundaries across 5 specialized roles:
 
 ---
 
+## 📱 Flutter Mobile Application (`digiink_app`)
+
+Digiink Task Flow includes a native, cross-platform mobile application built in **Flutter (Dart 3.10+)** following clean architectural patterns and a dedicated **Pure Light Mode UI**.
+
+### 🌟 Admin Module Features:
+1. **Executive Dashboard**:
+   - Live system metrics (Total Tasks, In Progress, Completed, Rework, Urgent, Global Word Count).
+   - Date picker daily hub with breakdown of tasks and daily word throughput.
+   - Leaderboards for top BDEs (sales volume) and top Operations Experts (delivered words).
+   - Recent tasks live activity feed.
+2. **Task Inventory & Advanced Filtering**:
+   - Filter by date (`yyyy-MM-dd` or all-time) and live status chips (⚡ Urgent, In Progress, Assigned, Completed, Rework).
+   - Real-time search across Task Keys, Project Names, and Client Names.
+3. **Comprehensive Task Details (`AdminTaskDetailScreen`)**:
+   - Complete project briefs, deadlines, word counts, and assigned experts.
+   - **⚡ Highlighted Additional Information / Instructions**: Specially highlighted amber cards for supplemental client revisions so no requirements are missed.
+   - One-tap Google Drive workspace links (Client files & Operations deliverables).
+   - Feedback history & supplemental proof attachments viewer.
+4. **User & Workforce Management**:
+   - Role-filtered user tabs (Ops Team, Managers, BDE, BDM, QC).
+   - Instant active/inactive user status toggle.
+   - Add User bottom sheet with automatic credential provisioning.
+5. **Reports & Analytics**:
+   - Interactive weekly production volume bar charts (`fl_chart`).
+   - Team contribution progress breakdowns.
+   - Production leaders ranking and report export simulation.
+6. **System Alerts & Notifications**:
+   - Live categorization: All Alerts, Unread, Urgent, Feedback, and System notices.
+   - Integrated FCM push diagnostic test trigger.
+
+### 🏃 Running the Mobile App:
+```bash
+cd digiink_app
+flutter pub get
+flutter run
+```
+
+---
+
 ## 📁 Project Structure
 
 ```
 digiink-task-flow/
+├── api/                   # REST API suite for mobile and external integrations
+│   ├── auth.php           # Token & credential authentication
+│   └── admin/             # Admin endpoints (dashboard, tasks, users)
+├── digiink_app/           # Flutter Mobile Application
+│   ├── lib/
+│   │   ├── core/          # Theme (Pure Light Mode), colors, and API endpoints
+│   │   ├── data/          # Models (AdminStats, Task, User) & Services (API, Auth)
+│   │   └── presentation/  # Screens (Splash, Auth, Admin) & Reusable Widgets
+│   └── pubspec.yaml       # Flutter dependencies (fl_chart, google_fonts, http, intl)
 ├── app/
 │   ├── config/            # Database and core configurations
 │   ├── core/              # Sessions, helpers, and utilities
 │   ├── middleware/        # Authentication & Role guards (RBAC)
 │   └── services/          # Business logic (Google Drive, FCM, Notifications, Workflow)
-├── assets/
-│   ├── css/               # Custom stylesheets
-│   └── js/                # FCM client scripts and UI helpers
+├── assets/                # Custom stylesheets and JS scripts
 ├── bootstrap/             # App initialization and environment loader
-├── config/
-│   └── credentials/       # OAuth & service account credentials (git-ignored)
 ├── database/              # SQL database schema and migrations
 ├── uploads/               # Staged client files and feedback attachments
-├── views/
-│   ├── admin/             # Super Admin dashboard and management views
-│   ├── bde/               # BDE task creation and tracking
-│   ├── operations_manager/# OM triage, assignment, and feedback control
-│   ├── operations_team/   # Ops expert execution, upload, and feedback
-│   ├── qc/                # Quality Control review and approval suite
-│   └── common/            # Shared components (FCM diagnostics, header, modals)
+├── views/                 # Web views (admin, bde, operations_manager, operations_team, qc)
 ├── firebase-messaging-sw.js # Background Web Push Service Worker
-├── .env.example           # Example environment template
-└── .htaccess              # Apache URL rewrite and security rules
+└── README.md
 ```
 
 ---
