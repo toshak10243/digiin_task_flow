@@ -74,6 +74,20 @@ class AuthService {
         await prefs.setString('user_data', jsonEncode(_currentUser!.toJson()));
         await prefs.setString('auth_token', _token!);
         return {'success': true, 'user': _currentUser, 'is_mock': true};
+      } else if (username.toLowerCase() == 'bde') {
+        _currentUser = UserModel(
+          id: 2,
+          name: 'Toshak Sharma',
+          username: 'bde',
+          email: 'bde@digiink.com',
+          role: 'bde',
+          status: 'active',
+        );
+        _token = 'mock_bde_token_12345';
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_data', jsonEncode(_currentUser!.toJson()));
+        await prefs.setString('auth_token', _token!);
+        return {'success': true, 'user': _currentUser, 'is_mock': true};
       }
       return {'success': false, 'message': 'Network error. Please check server connection.'};
     }

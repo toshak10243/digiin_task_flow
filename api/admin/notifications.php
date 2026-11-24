@@ -153,3 +153,4 @@ try {
         'message' => 'Notifications error: ' . $e->getMessage()
     ]);
 }
+

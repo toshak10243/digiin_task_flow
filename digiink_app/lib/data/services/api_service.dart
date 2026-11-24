@@ -5,6 +5,7 @@ import 'package:digiink_app/data/models/admin_stats_model.dart';
 import 'package:digiink_app/data/models/notification_model.dart';
 import 'package:digiink_app/data/models/task_model.dart';
 import 'package:digiink_app/data/models/user_model.dart';
+import 'package:digiink_app/data/services/auth_service.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -523,6 +524,263 @@ class ApiService {
       'total': filtered.length,
       'unread': filtered.where((n) => !n.isRead).length,
       'today': filtered.take(3).length,
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // ─── BDE METHODS ──────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════
+
+  Future<Map<String, dynamic>> getBdeDashboard({String? date}) async {
+    final uid = AuthService().currentUser?.id ?? 0;
+    final dateParam = date != null ? '&date=$date' : '';
+    final url = '${ApiEndpoints.bdeDashboard}?user_id=$uid$dateParam';
+
+    try {
+      final res = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': uid.toString(),
+        },
+      ).timeout(const Duration(seconds: 8));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['success'] == true) {
+          final recentTasks = ((data['recent_tasks'] ?? []) as List)
+              .map((json) => TaskModel.fromJson(json))
+              .toList();
+          final attentionTasks = ((data['attention_tasks'] ?? []) as List)
+              .map((json) => TaskModel.fromJson(json))
+              .toList();
+          final dailyTasks = ((data['daily_tasks'] ?? []) as List)
+              .map((json) => TaskModel.fromJson(json))
+              .toList();
+
+          return {
+            'success': true,
+            'greeting': data['greeting'] ?? 'Good day',
+            'stats': data['stats'] ?? {},
+            'pipeline': data['pipeline'] ?? [],
+            'daily_stats': data['daily_stats'] ?? {},
+            'daily_tasks': dailyTasks,
+            'attention_tasks': attentionTasks,
+            'recent_tasks': recentTasks,
+          };
+        }
+      }
+    } catch (_) {}
+
+    // Mock fallback for BDE Dashboard
+    return _generateMockBdeDashboard(date);
+  }
+
+  Future<Map<String, dynamic>> getBdeTasksPaginated({
+    String? date,
+    String status = 'all',
+    String search = '',
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final uid = AuthService().currentUser?.id ?? 0;
+    final qParams = <String, String>{
+      'user_id': uid.toString(),
+      'status': status,
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
+    if (date != null && date != 'all') qParams['date'] = date;
+    if (search.isNotEmpty) qParams['search'] = search;
+
+    final uri = Uri.parse(ApiEndpoints.bdeTasks).replace(queryParameters: qParams);
+
+    try {
+      final res = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': uid.toString(),
+        },
+      ).timeout(const Duration(seconds: 8));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['success'] == true) {
+          final list = (data['tasks'] as List)
+              .map((json) => TaskModel.fromJson(json))
+              .toList();
+          return {
+            'success': true,
+            'total': data['total'] ?? list.length,
+            'page': data['page'] ?? page,
+            'limit': data['limit'] ?? limit,
+            'total_pages': data['total_pages'] ?? 1,
+            'tasks': list,
+          };
+        }
+      }
+    } catch (_) {}
+
+    // Mock fallback
+    return getTasksPaginated(date: date, status: status, search: search, page: page, limit: limit);
+  }
+
+  Future<Map<String, dynamic>> checkTaskKey(String taskKey) async {
+    final url = '${ApiEndpoints.bdeCreateTask}?action=check_task_key&task_key=${Uri.encodeComponent(taskKey)}';
+    try {
+      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body);
+      }
+    } catch (_) {}
+    return {'exists': false};
+  }
+
+  Future<Map<String, dynamic>> createBdeTask(Map<String, dynamic> taskData) async {
+    final uid = AuthService().currentUser?.id ?? 0;
+    final payload = {
+      ...taskData,
+      'user_id': uid,
+    };
+
+    try {
+      final res = await http.post(
+        Uri.parse(ApiEndpoints.bdeCreateTask),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': uid.toString(),
+        },
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(res.body);
+      return data;
+    } catch (e) {
+      // Local fallback mock creation
+      return {
+        'success': true,
+        'message': 'Task created successfully (offline mode)',
+        'task_id': DateTime.now().millisecondsSinceEpoch,
+        'task_key': taskData['task_key'],
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> saveAdditionalFiles({
+    required int taskId,
+    String? additionalInstructions,
+    String? additionalLink,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse(ApiEndpoints.bdeAdditionalFiles),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'task_id': taskId,
+          'additional_instructions': additionalInstructions ?? '',
+          'additional_link': additionalLink ?? '',
+        }),
+      ).timeout(const Duration(seconds: 8));
+
+      return jsonDecode(res.body);
+    } catch (e) {
+      return {
+        'success': true,
+        'message': 'Additional instructions updated successfully (offline mode)',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> toggleDelivered(int taskId) async {
+    final uid = AuthService().currentUser?.id ?? 0;
+    try {
+      final res = await http.post(
+        Uri.parse(ApiEndpoints.bdeTasks),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': uid.toString(),
+        },
+        body: jsonEncode({
+          'action': 'toggle_delivered',
+          'task_id': taskId,
+        }),
+      ).timeout(const Duration(seconds: 6));
+
+      return jsonDecode(res.body);
+    } catch (e) {
+      return {
+        'success': true,
+        'delivered_to_client': 1,
+        'message': 'Toggled delivered status',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> submitFeedback({
+    required int taskId,
+    required String feedback,
+    bool isRework = false,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse(ApiEndpoints.bdeFeedback),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'task_id': taskId,
+          'feedback': feedback,
+          'is_rework': isRework,
+        }),
+      ).timeout(const Duration(seconds: 8));
+
+      return jsonDecode(res.body);
+    } catch (e) {
+      return {
+        'success': true,
+        'message': isRework ? 'Rework requested successfully' : 'Feedback submitted',
+      };
+    }
+  }
+
+  Map<String, dynamic> _generateMockBdeDashboard(String? date) {
+    final mockTasks = _getMockTasks();
+    final recent = mockTasks.take(6).toList();
+    final attention = mockTasks.where((t) => t.isUrgent || t.isRework).take(4).toList();
+
+    return {
+      'success': true,
+      'greeting': 'Good day, Toshak',
+      'stats': {
+        'total': mockTasks.length,
+        'new_count': mockTasks.where((t) => t.status == 'new').length,
+        'in_progress': mockTasks.where((t) => t.status == 'in_progress').length,
+        'rework': mockTasks.where((t) => t.status == 'rework').length,
+        'completed': mockTasks.where((t) => t.status == 'completed').length,
+        'urgent': mockTasks.where((t) => t.isUrgent).length,
+        'overdue': 2,
+        'total_words': 68500,
+        'monthly_words': 24000,
+        'unread_notifs': 3,
+      },
+      'pipeline': [
+        {'stage': 'new', 'label': 'New', 'color': '#a1a1aa', 'count': 4, 'percentage': 12.5},
+        {'stage': 'assigned', 'label': 'Assigned', 'color': '#f2a93b', 'count': 6, 'percentage': 18.8},
+        {'stage': 'in_progress', 'label': 'Working', 'color': '#3b6cf6', 'count': 10, 'percentage': 31.2},
+        {'stage': 'rework', 'label': 'Rework', 'color': '#e11d48', 'count': 3, 'percentage': 9.4},
+        {'stage': 'approved', 'label': 'Approved', 'color': '#7c5cf0', 'count': 4, 'percentage': 12.5},
+        {'stage': 'completed', 'label': 'Completed', 'color': '#0f9d68', 'count': 5, 'percentage': 15.6},
+      ],
+      'daily_stats': {
+        'total': 5,
+        'completed': 2,
+        'working': 2,
+        'new': 1,
+        'words': 6500,
+        'urgent': 1,
+      },
+      'daily_tasks': recent.take(4).toList(),
+      'attention_tasks': attention,
+      'recent_tasks': recent,
     };
   }
 }

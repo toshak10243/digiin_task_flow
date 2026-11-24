@@ -3,6 +3,7 @@ import 'package:digiink_app/core/constants/api_endpoints.dart';
 import 'package:digiink_app/core/constants/app_colors.dart';
 import 'package:digiink_app/data/services/auth_service.dart';
 import 'package:digiink_app/presentation/screens/admin/admin_main_screen.dart';
+import 'package:digiink_app/presentation/screens/bde/bde_main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,9 +47,12 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result['success'] == true) {
+      final user = AuthService().currentUser;
+      final role = user?.role.toLowerCase() ?? '';
+      final destination = role == 'bde' ? const BdeMainScreen() : const AdminMainScreen();
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const AdminMainScreen()),
+        MaterialPageRoute(builder: (_) => destination),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

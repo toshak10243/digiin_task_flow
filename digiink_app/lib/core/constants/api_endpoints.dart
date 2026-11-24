@@ -13,5 +13,12 @@ class ApiEndpoints {
   static String get adminUsers => '$baseUrl/admin/users.php';
   static String get adminTasks => '$baseUrl/admin/tasks.php';
   static String get adminNotifications => '$baseUrl/admin/notifications.php';
+
+  // BDE
+  static String get bdeDashboard => '$baseUrl/bde/dashboard.php';
+  static String get bdeTasks => '$baseUrl/bde/tasks.php';
+  static String get bdeCreateTask => '$baseUrl/bde/create_task.php';
+  static String get bdeAdditionalFiles => '$baseUrl/bde/additional_files.php';
+  static String get bdeFeedback => '$baseUrl/bde/feedback.php';
 }
 

@@ -21,6 +21,7 @@ class TaskModel {
   final String? teamNotes;
   final String? feedback;
   final List<dynamic> feedbackFiles;
+  final bool deliveredToClient;
   final String createdAt;
 
   TaskModel({
@@ -46,10 +47,12 @@ class TaskModel {
     this.teamNotes,
     this.feedback,
     this.feedbackFiles = const [],
+    this.deliveredToClient = false,
     required this.createdAt,
   });
 
   bool get isUrgent => urgent.toLowerCase() == 'yes';
+  bool get isRework => status.toLowerCase() == 'rework';
   bool get hasAdditionalInstructions => additionalInstructions.trim().isNotEmpty;
   bool get hasFeedback => (feedback != null && feedback!.trim().isNotEmpty) || feedbackFiles.isNotEmpty;
 
@@ -77,6 +80,7 @@ class TaskModel {
       teamNotes: json['team_notes'],
       feedback: json['feedback'],
       feedbackFiles: json['feedback_files_parsed'] ?? [],
+      deliveredToClient: json['delivered_to_client'] == 1 || json['delivered_to_client'] == true || json['delivered_to_client'] == '1',
       createdAt: json['created_at'] ?? json['task_created_at'] ?? '',
     );
   }
