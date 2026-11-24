@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:digiink_app/core/constants/app_colors.dart';
 import 'package:digiink_app/data/models/admin_stats_model.dart';
 import 'package:digiink_app/data/models/task_model.dart';
@@ -19,6 +18,7 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   bool _isLoading = true;
   DateTime _selectedDate = DateTime.now();
+  int _leaderboardTab = 0; // 0: Top BDEs, 1: Top Ops Team
 
   AdminStatsModel? _systemStats;
   DailyStatsModel? _dailyStats;
@@ -33,7 +33,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     _loadDashboard();
   }
 
-  // Safe number formatter that NEVER throws isNegative on String values
   String formatNumber(dynamic value) {
     if (value == null) return '0';
     if (value is num) {
@@ -77,7 +76,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: AppColors.secondary,
+              primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: AppColors.textPrimary,
@@ -127,7 +126,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
-    final nowFormatted = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -137,41 +135,37 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           onRefresh: _loadDashboard,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Welcome Header
-                _buildHeader(user?.name ?? user?.username ?? 'Admin', nowFormatted),
-                const SizedBox(height: 18),
+                // 1. Profile Greeting Header
+                _buildHeader(user?.name ?? user?.username ?? 'Admin'),
+                const SizedBox(height: 16),
 
                 if (_isLoading) ...[
-                  const SizedBox(height: 60),
+                  const SizedBox(height: 80),
                   const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                  const SizedBox(height: 60),
+                  const SizedBox(height: 80),
                 ] else ...[
-                  // 1. Top 6 Stat Cards (matching web grid)
-                  _buildSystemStatsGrid(),
-                  const SizedBox(height: 20),
+                  // 2. Word Volume Hero Banner
+                  _buildWordHeroBanner(),
+                  const SizedBox(height: 14),
 
-                  // 2. Daily Task Archive Section (Date-wise)
-                  _buildDailyArchiveCard(),
-                  const SizedBox(height: 20),
+                  // 3. Operational 4-Grid Cards
+                  _buildOperationalCards(),
+                  const SizedBox(height: 18),
 
-                  // 3. Visual Charts (Tasks pipeline & status donut)
-                  _buildChartsSection(),
-                  const SizedBox(height: 20),
+                  // 4. Daily Operations Log (Date-Wise Section)
+                  _buildDailyOperationsCard(),
+                  const SizedBox(height: 18),
 
-                  // 4. Top Performing BDE Table
-                  _buildTopBdeCard(),
-                  const SizedBox(height: 20),
+                  // 5. Performance Leaderboards (Tabbed BDE vs Team)
+                  _buildLeaderboardsCard(),
+                  const SizedBox(height: 18),
 
-                  // 5. Top Operations Team Table
-                  _buildTopTeamCard(),
-                  const SizedBox(height: 20),
-
-                  // 6. Recent System Activity Table
-                  _buildRecentActivityCard(),
+                  // 6. Recent System Activity Feed
+                  _buildRecentTasksFeed(),
                   const SizedBox(height: 24),
                 ],
               ],
@@ -182,104 +176,177 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  // ─── HEADER ─────────────────────────────────────────────────────────────
-  Widget _buildHeader(String name, String timeStr) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  // ─── 1. GREETING HEADER ──────────────────────────────────────────────────
+  Widget _buildHeader(String name) {
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'A';
+    final nowFormatted = DateFormat('EEE, dd MMM yyyy').format(DateTime.now());
+
+    return Row(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      text: 'Welcome, ',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E293B),
-                        letterSpacing: -0.5,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: name,
-                          style: const TextStyle(
-                            color: Color(0xFF2563EB),
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  const Text(
-                    'ADMIN DASHBOARD OVERVIEW',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF94A3B8),
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: AppColors.primary,
+          child: Text(
+            initial,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Welcome, $name',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.3,
+                ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: const [
-                  BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1)),
-                ],
+              Text(
+                nowFormatted,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.schedule, size: 14, color: Color(0xFF2563EB)),
-                  const SizedBox(width: 5),
-                  Text(
-                    timeStr,
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
-                  ),
-                ],
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFECFDF5),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFA7F3D0)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              CircleAvatar(radius: 3.5, backgroundColor: Color(0xFF10B981)),
+              SizedBox(width: 5),
+              Text(
+                'ONLINE',
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF065F46)),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
   }
 
-  // ─── 1. TOP 6 STAT CARDS (EXACT MATCH TO WEB) ───────────────────────────
-  Widget _buildSystemStatsGrid() {
+  // ─── 2. WORD VOLUME HERO BANNER ──────────────────────────────────────────
+  Widget _buildWordHeroBanner() {
     final stats = _systemStats;
-    final currMonth = DateFormat('MMM').format(DateTime.now());
+    final totalWords = formatNumber(stats?.totalWords ?? 0);
+    final monthWords = formatNumber(stats?.monthlyWords ?? 0);
+    final currMonth = DateFormat('MMMM').format(DateTime.now());
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E1B4B), Color(0xFF3730A3)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3730A3).withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.analytics_rounded, color: Colors.white, size: 16),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'SYSTEM WORD PRODUCTION',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFC7D2FE),
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  currMonth,
+                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '$totalWords Words',
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$monthWords words processed in $currMonth',
+            style: const TextStyle(fontSize: 12, color: Color(0xFFE0E7FF), fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── 3. OPERATIONAL 4-GRID CARDS ─────────────────────────────────────────
+  Widget _buildOperationalCards() {
+    final stats = _systemStats;
 
     return Column(
       children: [
         Row(
           children: [
             Expanded(
-              child: _buildWebStatCard(
-                title: 'TOTAL USERS',
-                value: '${stats?.totalUsers ?? 0}',
-                borderColor: const Color(0xFF2563EB),
-                textColor: const Color(0xFF1D4ED8),
+              child: _buildMetricTile(
+                title: 'Total Tasks',
+                count: '${stats?.totalTasks ?? 0}',
+                subtitle: 'All-time volume',
+                icon: Icons.assignment_outlined,
+                color: const Color(0xFF2563EB),
+                bgTint: const Color(0xFFEFF6FF),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _buildWebStatCard(
-                title: 'TOTAL TASKS',
-                value: '${stats?.totalTasks ?? 0}',
-                borderColor: const Color(0xFF16A34A),
-                textColor: const Color(0xFF15803D),
+              child: _buildMetricTile(
+                title: 'In Progress',
+                count: '${stats?.inProgress ?? 0}',
+                subtitle: 'Active with team',
+                icon: Icons.pending_actions_outlined,
+                color: const Color(0xFFD97706),
+                bgTint: const Color(0xFFFFFBEB),
               ),
             ),
           ],
@@ -288,170 +355,119 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         Row(
           children: [
             Expanded(
-              child: _buildWebStatCard(
-                title: 'IN PROGRESS',
-                value: '${stats?.inProgress ?? 0}',
-                borderColor: const Color(0xFFEAB308),
-                textColor: const Color(0xFFCA8A04),
+              child: _buildMetricTile(
+                title: 'Completed',
+                count: '${stats?.completed ?? 0}',
+                subtitle: 'Delivered tasks',
+                icon: Icons.check_circle_outline,
+                color: const Color(0xFF16A34A),
+                bgTint: const Color(0xFFECFDF5),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _buildWebStatCard(
-                title: 'COMPLETED',
-                value: '${stats?.completed ?? 0}',
-                borderColor: const Color(0xFF9333EA),
-                textColor: const Color(0xFF7E22CE),
+              child: _buildMetricTile(
+                title: 'Urgent Tasks',
+                count: '${stats?.urgent ?? 0}',
+                subtitle: 'Priority queue',
+                icon: Icons.priority_high_rounded,
+                color: const Color(0xFFDC2626),
+                bgTint: const Color(0xFFFEF2F2),
               ),
             ),
           ],
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _buildWebStatCard(
-                title: 'URGENT',
-                value: '${stats?.urgent ?? 0}',
-                borderColor: const Color(0xFFDC2626),
-                textColor: const Color(0xFFB91C1C),
+
+        // Workforce pill
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFEEF2F6)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.people_alt_outlined, color: AppColors.primary, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '${stats?.totalUsers ?? 0} Team Members active across 5 operational tiers',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildWebWordsCard(
-                totalWords: formatNumber(stats?.totalWords ?? 0),
-                monthWords: formatNumber(stats?.monthlyWords ?? 0),
-                monthName: currMonth,
-              ),
-            ),
-          ],
+              const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF94A3B8)),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildWebStatCard({
+  Widget _buildMetricTile({
     required String title,
-    required String value,
-    required Color borderColor,
-    required Color textColor,
+    required String count,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required Color bgTint,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFEEF2F6)),
         boxShadow: const [
-          BoxShadow(color: Color(0x06000000), blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(color: Color(0x04000000), blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 3,
-            width: 36,
-            decoration: BoxDecoration(
-              color: borderColor,
-              borderRadius: BorderRadius.circular(2),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: bgTint,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 16),
+              ),
+              Text(
+                count,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF94A3B8),
-              letterSpacing: 1.0,
-            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
           ),
-          const SizedBox(height: 4),
           Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: textColor,
-              letterSpacing: -0.5,
-            ),
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildWebWordsCard({
-    required String totalWords,
-    required String monthWords,
-    required String monthName,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEEF2F6)),
-        boxShadow: const [
-          BoxShadow(color: Color(0x06000000), blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            height: 3,
-            width: 36,
-            decoration: BoxDecoration(
-              color: const Color(0xFF4F46E5),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'TOTAL WORDS',
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF94A3B8),
-              letterSpacing: 0.8,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            totalWords,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF4338CA),
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEEF2FF),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '$monthName: $monthWords',
-              style: const TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF4F46E5),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── 2. DAILY TASK ARCHIVE (DATE-WISE BREAKDOWN) ────────────────────────
-  Widget _buildDailyArchiveCard() {
+  // ─── 4. DAILY OPERATIONS LOG ─────────────────────────────────────────────
+  Widget _buildDailyOperationsCard() {
     final daily = _dailyStats;
     final dateDisplay = DateFormat('dd MMM yyyy').format(_selectedDate);
 
@@ -468,17 +484,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Title & Date Controls
+          // Title & Date Controls
           Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F172A),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.calendar_today, color: Colors.white, size: 16),
+                child: const Icon(Icons.calendar_month_outlined, color: Colors.white, size: 16),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -488,13 +503,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     Row(
                       children: [
                         const Text(
-                          'System Daily Task Archive',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
+                          'Daily Operations Log',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                         ),
                         if (_isToday) ...[
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                             decoration: BoxDecoration(
                               color: const Color(0xFFD1FAE5),
                               borderRadius: BorderRadius.circular(6),
@@ -509,7 +524,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                     Text(
                       dateDisplay,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
                     ),
                   ],
                 ),
@@ -518,63 +533,53 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Quick Filter Buttons (Today, Yesterday, Pick Date)
+          // Date Chips Row
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildDateButton('Today', _isToday, _setDateToday),
+                _buildDateChip('Today', _isToday, _setDateToday),
                 const SizedBox(width: 6),
-                _buildDateButton('Yesterday', _isYesterday, _setDateYesterday),
+                _buildDateChip('Yesterday', _isYesterday, _setDateYesterday),
                 const SizedBox(width: 6),
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                InkWell(
+                  onTap: _pickDate,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.date_range_outlined, size: 12, color: Color(0xFF475569)),
+                        SizedBox(width: 4),
+                        Text('Calendar', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
+                      ],
+                    ),
                   ),
-                  icon: const Icon(Icons.edit_calendar, size: 13, color: Color(0xFF475569)),
-                  label: const Text('Pick Date', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
-                  onPressed: _pickDate,
-                ),
-                const SizedBox(width: 6),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
-                    visualDensity: VisualDensity.compact,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  ),
-                  icon: const Icon(Icons.arrow_forward, size: 13, color: Colors.white),
-                  label: const Text('Full Daily Hub', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AdminTasksScreen(),
-                      ),
-                    );
-                  },
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          // 4 Metric Tiles (Total Booked, Active, Completed, Word Count)
+          // 4 Responsive Metrics in a Row (overflow-proof)
           Row(
             children: [
-              _buildDailyPill('TOTAL BOOKED', '${daily?.total ?? 0}', 'Tasks', const Color(0xFF0F172A)),
+              Expanded(child: _buildDailySmallTile('Booked', '${daily?.total ?? 0}', const Color(0xFF0F172A))),
               const SizedBox(width: 6),
-              _buildDailyPill('ACTIVE', '${daily?.working ?? 0}', 'Tasks', const Color(0xFFD97706)),
+              Expanded(child: _buildDailySmallTile('Active', '${daily?.working ?? 0}', const Color(0xFFD97706))),
               const SizedBox(width: 6),
-              _buildDailyPill('COMPLETED', '${daily?.completed ?? 0}', 'Delivered', const Color(0xFF16A34A)),
+              Expanded(child: _buildDailySmallTile('Done', '${daily?.completed ?? 0}', const Color(0xFF16A34A))),
               const SizedBox(width: 6),
-              _buildDailyPill('WORD COUNT', formatNumber(daily?.words ?? 0), 'Words', const Color(0xFF4F46E5)),
+              Expanded(child: _buildDailySmallTile('Words', formatNumber(daily?.words ?? 0), const Color(0xFF4F46E5))),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // Daily Tasks List
           if (_dailyTasks.isEmpty)
@@ -583,19 +588,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               alignment: Alignment.center,
               child: const Column(
                 children: [
-                  Icon(Icons.event_busy, color: Color(0xFFCBD5E1), size: 30),
+                  Icon(Icons.event_busy_outlined, color: Color(0xFFCBD5E1), size: 28),
                   SizedBox(height: 4),
                   Text(
                     'No tasks recorded for this date',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
+                    style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
             )
           else ...[
-            ..._dailyTasks.take(5).map((t) => _buildDailyTaskItem(t)),
-            if (_dailyTasks.length > 5) ...[
-              const SizedBox(height: 6),
+            ..._dailyTasks.take(4).map((t) => _buildDailyTaskRow(t)),
+            if (_dailyTasks.length > 4) ...[
+              const SizedBox(height: 4),
               Center(
                 child: TextButton(
                   onPressed: () {
@@ -606,7 +611,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   },
                   child: Text(
                     'View all ${_dailyTasks.length} tasks for this date →',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5)),
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
                   ),
                 ),
               ),
@@ -617,12 +622,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildDateButton(String label, bool isSelected, VoidCallback onTap) {
+  Widget _buildDateChip(String label, bool isSelected, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(10),
@@ -631,7 +636,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           label,
           style: TextStyle(
             fontSize: 11,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
             color: isSelected ? Colors.white : const Color(0xFF475569),
           ),
         ),
@@ -639,65 +644,57 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildDailyPill(String title, String val, String subtitle, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFEEF2F6)),
-        ),
-        child: Column(
-          children: [
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: color),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              val,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: color),
-            ),
-            Text(
-              subtitle,
-              style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
-            ),
-          ],
-        ),
+  Widget _buildDailySmallTile(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFEEF2F6)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8)),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: color),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildDailyTaskItem(TaskModel task) {
-    final lastTwo = task.taskKey.length >= 2 ? task.taskKey.substring(task.taskKey.length - 2) : '00';
-
+  Widget _buildDailyTaskRow(TaskModel task) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFFEEF2F6)),
       ),
       child: Row(
         children: [
           Container(
-            width: 28,
-            height: 28,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             decoration: BoxDecoration(
               color: const Color(0xFFE2E8F0),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
-            alignment: Alignment.center,
             child: Text(
-              lastTwo,
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
+              task.taskKey.length >= 3 ? task.taskKey.substring(task.taskKey.length - 3) : task.taskKey,
+              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -709,22 +706,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
                 ),
                 Text(
-                  '${task.taskKey} · ${formatNumber(task.wordCount)} words · ${task.expertName ?? "Queue"}',
+                  '${formatNumber(task.wordCount)} words • ${task.expertName ?? "Unassigned"}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
+                  style: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 6),
-          _buildStatusChip(task.status),
+          _buildStatusPill(task.status),
         ],
       ),
     );
   }
 
-  Widget _buildStatusChip(String status) {
+  Widget _buildStatusPill(String status) {
     Color bg;
     Color fg;
     switch (status.toLowerCase()) {
@@ -746,7 +743,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
       child: Text(
         status.replaceAll('_', ' ').toUpperCase(),
@@ -755,15 +752,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  // ─── 3. VISUAL CHARTS (APEX CHARTS ON MOBILE VIA FL_CHART) ───────────────
-  Widget _buildChartsSection() {
-    final stats = _systemStats;
-    final total = (stats?.totalTasks ?? 0).toDouble();
-    final completed = (stats?.completed ?? 0).toDouble();
-    final working = (stats?.inProgress ?? 0).toDouble();
-    final urgent = (stats?.urgent ?? 0).toDouble();
-
-    final maxBar = [total, completed, working, urgent, 10.0].reduce((a, b) => a > b ? a : b);
+  // ─── 5. PERFORMANCE LEADERBOARDS ─────────────────────────────────────────
+  Widget _buildLeaderboardsCard() {
+    final list = _leaderboardTab == 0 ? _topBde : _topTeam;
+    final isBde = _leaderboardTab == 0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -778,251 +770,161 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.bar_chart_rounded, size: 18, color: Color(0xFF2563EB)),
-              SizedBox(width: 8),
-              Text(
-                'Task Pipeline & Distribution',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
+              const Icon(Icons.workspace_premium_outlined, color: AppColors.primary, size: 18),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Production Leaderboards',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 180,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: maxBar + (maxBar * 0.15),
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (val, meta) {
-                        const labels = ['Total', 'Completed', 'Progress', 'Urgent'];
-                        if (val.toInt() >= 0 && val.toInt() < labels.length) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text(
-                              labels[val.toInt()],
-                              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
-                            ),
-                          );
-                        }
-                        return const SizedBox();
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 26,
-                      getTitlesWidget: (val, meta) {
-                        return Text(
-                          '${val.toInt()}',
-                          style: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
-                        );
-                      },
-                    ),
-                  ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (val) => FlLine(color: const Color(0xFFF1F5F9), strokeWidth: 1),
-                ),
-                borderData: FlBorderData(show: false),
-                barGroups: [
-                  _makeBar(0, total, const Color(0xFF2563EB)),
-                  _makeBar(1, completed, const Color(0xFF16A34A)),
-                  _makeBar(2, working, const Color(0xFFEAB308)),
-                  _makeBar(3, urgent, const Color(0xFFDC2626)),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+          const SizedBox(height: 12),
 
-  BarChartGroupData _makeBar(int x, double y, Color color) {
-    return BarChartGroupData(
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: y,
-          color: color,
-          width: 20,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-        ),
-      ],
-    );
-  }
-
-  // ─── 4. TOP BDE TABLE ───────────────────────────────────────────────────
-  Widget _buildTopBdeCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFEEF2F6)),
-        boxShadow: const [
-          BoxShadow(color: Color(0x06000000), blurRadius: 10, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        children: [
+          // Tabs
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.leaderboard_rounded, size: 18, color: Color(0xFF2563EB)),
-                SizedBox(width: 8),
-                Text(
-                  'Top Performing BDE',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _leaderboardTab = 0),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _leaderboardTab == 0 ? Colors.white : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: _leaderboardTab == 0
+                            ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))]
+                            : null,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Top BDEs (Sales)',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: _leaderboardTab == 0 ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _leaderboardTab = 1),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _leaderboardTab == 1 ? Colors.white : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: _leaderboardTab == 1
+                            ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))]
+                            : null,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Ops Team (Delivery)',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: _leaderboardTab == 1 ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-          if (_topBde.isEmpty)
+          const SizedBox(height: 12),
+
+          if (list.isEmpty)
             const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('No BDE records yet', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+              padding: EdgeInsets.all(12),
+              child: Center(
+                child: Text('No performance data available yet', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+              ),
             )
           else ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: const [
-                  Expanded(flex: 3, child: Text('NAME', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8)))),
-                  Expanded(flex: 2, child: Text('TASKS', textAlign: TextAlign.center, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8)))),
-                  Expanded(flex: 2, child: Text('WORDS', textAlign: TextAlign.right, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8)))),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: Color(0xFFF1F5F9)),
-            ..._topBde.map((b) => _buildTopRow(
-                  b['name'] ?? b['username'] ?? 'User',
-                  '${parseInt(b['total_tasks'])}',
-                  formatNumber(b['words']),
-                  const Color(0xFF2563EB),
-                )),
+            ...list.asMap().entries.map((entry) {
+              final rank = entry.key + 1;
+              final item = entry.value;
+              final name = item['name'] ?? item['username'] ?? 'User';
+              final count = isBde ? parseInt(item['total_tasks']) : parseInt(item['completed_tasks']);
+              final countLabel = isBde ? '$count Tasks' : '$count Done';
+              final words = formatNumber(item['words']);
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFEEF2F6)),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 11,
+                      backgroundColor: rank == 1
+                          ? const Color(0xFFF59E0B)
+                          : rank == 2
+                              ? const Color(0xFF94A3B8)
+                              : rank == 3
+                                  ? const Color(0xFFB45309)
+                                  : const Color(0xFFCBD5E1),
+                      child: Text(
+                        '$rank',
+                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      countLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: isBde ? const Color(0xFF2563EB) : const Color(0xFF16A34A),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$words w',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF4F46E5)),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
         ],
       ),
     );
   }
 
-  // ─── 5. TOP OPERATIONS TEAM TABLE ───────────────────────────────────────
-  Widget _buildTopTeamCard() {
+  // ─── 6. RECENT SYSTEM TASKS FEED ─────────────────────────────────────────
+  Widget _buildRecentTasksFeed() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFEEF2F6)),
-        boxShadow: const [
-          BoxShadow(color: Color(0x06000000), blurRadius: 10, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.military_tech_rounded, size: 18, color: Color(0xFF16A34A)),
-                SizedBox(width: 8),
-                Text(
-                  'Top Operations Team',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
-                ),
-              ],
-            ),
-          ),
-          if (_topTeam.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('No team records yet', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-            )
-          else ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: const [
-                  Expanded(flex: 3, child: Text('NAME', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8)))),
-                  Expanded(flex: 2, child: Text('COMPLETED', textAlign: TextAlign.center, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8)))),
-                  Expanded(flex: 2, child: Text('WORDS', textAlign: TextAlign.right, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8)))),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: Color(0xFFF1F5F9)),
-            ..._topTeam.map((t) => _buildTopRow(
-                  t['name'] ?? t['username'] ?? 'User',
-                  '${parseInt(t['completed_tasks'])}',
-                  formatNumber(t['words']),
-                  const Color(0xFF16A34A),
-                )),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopRow(String name, String tasks, String words, Color accentColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFF8FAFC))),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              tasks,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: accentColor),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              words,
-              textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFF4F46E5)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── 6. RECENT SYSTEM ACTIVITY ──────────────────────────────────────────
-  Widget _buildRecentActivityCard() {
-    return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -1034,70 +936,89 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.history_rounded, size: 18, color: Color(0xFF64748B)),
-                SizedBox(width: 8),
-                Text(
+          Row(
+            children: const [
+              Icon(Icons.history_rounded, size: 18, color: Color(0xFF64748B)),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
                   'Recent System Activity',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          const SizedBox(height: 10),
+
           if (_recentTasks.isEmpty)
             const Padding(
               padding: EdgeInsets.all(16),
-              child: Text('No recent activity', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+              child: Center(
+                child: Text('No recent activity records', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+              ),
             )
           else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _recentTasks.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
-              itemBuilder: (ctx, index) {
-                final task = _recentTasks[index];
-                return ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  title: Row(
+            ..._recentTasks.map((task) {
+              return InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AdminTaskDetailScreen(taskId: task.id),
+                    ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFEEF2F6)),
+                  ),
+                  child: Row(
                     children: [
-                      Text(
-                        task.taskKey,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  task.taskKey,
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                ),
+                                const SizedBox(width: 6),
+                                _buildStatusPill(task.status),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              task.taskName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(width: 8),
-                      _buildStatusChip(task.status),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            task.deadline.length >= 10 ? task.deadline.substring(0, 10) : task.deadline,
+                            style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFFEF4444)),
+                          ),
+                          const SizedBox(height: 2),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF94A3B8)),
+                        ],
+                      ),
                     ],
                   ),
-                  subtitle: Text(
-                    task.taskName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
-                  ),
-                  trailing: Text(
-                    task.deadline.length >= 10 ? task.deadline.substring(0, 10) : task.deadline,
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFEF4444)),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AdminTaskDetailScreen(taskId: task.id),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+                ),
+              );
+            }),
         ],
       ),
     );

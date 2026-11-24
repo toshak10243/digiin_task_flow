@@ -135,11 +135,10 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                   const Divider(color: Colors.white24, height: 1),
                   const SizedBox(height: 12),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildWhiteStat('Tasks Completed', '312 / 429'),
-                      _buildWhiteStat('Avg Turnaround', '28.4 Hrs'),
-                      _buildWhiteStat('Rework Rate', '1.8%'),
+                      Expanded(child: _buildWhiteStat('Tasks Done', '312 / 429')),
+                      Expanded(child: _buildWhiteStat('Turnaround', '28.4 Hrs')),
+                      Expanded(child: _buildWhiteStat('Rework Rate', '1.8%')),
                     ],
                   ),
                 ],
@@ -332,10 +331,20 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-            Text(countText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              countText,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+            ),
           ],
         ),
         const SizedBox(height: 6),
@@ -344,7 +353,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
           child: LinearProgressIndicator(
             value: ratio,
             minHeight: 7,
-            backgroundColor: color.withOpacity(0.12),
+            backgroundColor: color.withValues(alpha: 0.12),
             valueColor: AlwaysStoppedAnimation<Color>(color),
           ),
         ),
@@ -376,19 +385,30 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
               style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                Text(role, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                ),
+                Text(
+                  role,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             stats,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
           ),
         ],
       ),
