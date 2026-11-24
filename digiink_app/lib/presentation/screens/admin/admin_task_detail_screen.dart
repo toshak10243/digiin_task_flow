@@ -329,7 +329,7 @@ class _AdminTaskDetailScreenState extends State<AdminTaskDetailScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
-                  '⚡ UPDATED',
+                  'UPDATED',
                   style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFF78350F)),
                 ),
               ),

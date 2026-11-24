@@ -1,3 +1,10 @@
+int _parseInt(dynamic v) {
+  if (v == null) return 0;
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  return int.tryParse(v.toString()) ?? 0;
+}
+
 class AdminStatsModel {
   final int totalUsers;
   final int totalTasks;
@@ -25,19 +32,19 @@ class AdminStatsModel {
     Map<String, int> roles = {};
     if (json['role_counts'] is Map) {
       (json['role_counts'] as Map).forEach((k, v) {
-        roles[k.toString()] = int.tryParse(v.toString()) ?? 0;
+        roles[k.toString()] = _parseInt(v);
       });
     }
 
     return AdminStatsModel(
-      totalUsers: json['total_users'] ?? 0,
-      totalTasks: json['total_tasks'] ?? 0,
-      inProgress: json['in_progress'] ?? 0,
-      completed: json['completed'] ?? 0,
-      rework: json['rework'] ?? 0,
-      urgent: json['urgent'] ?? 0,
-      totalWords: json['total_words'] ?? 0,
-      monthlyWords: json['monthly_words'] ?? 0,
+      totalUsers: _parseInt(json['total_users']),
+      totalTasks: _parseInt(json['total_tasks']),
+      inProgress: _parseInt(json['in_progress']),
+      completed: _parseInt(json['completed']),
+      rework: _parseInt(json['rework']),
+      urgent: _parseInt(json['urgent']),
+      totalWords: _parseInt(json['total_words']),
+      monthlyWords: _parseInt(json['monthly_words']),
       roleCounts: roles,
     );
   }
@@ -60,12 +67,11 @@ class DailyStatsModel {
 
   factory DailyStatsModel.fromJson(Map<String, dynamic> json) {
     return DailyStatsModel(
-      total: json['total'] ?? 0,
-      completed: json['completed'] ?? 0,
-      working: json['working'] ?? 0,
-      rework: json['rework'] ?? 0,
-      words: json['words'] ?? 0,
+      total: _parseInt(json['total']),
+      completed: _parseInt(json['completed']),
+      working: _parseInt(json['working']),
+      rework: _parseInt(json['rework']),
+      words: _parseInt(json['words']),
     );
   }
 }
-

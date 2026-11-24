@@ -162,7 +162,7 @@ class TaskCard extends StatelessWidget {
                     Icon(Icons.new_releases_rounded, size: 13, color: AppColors.warning),
                     SizedBox(width: 5),
                     Text(
-                      '⚡ Additional Information / Client Update',
+                      'Additional Information / Client Update',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:digiink_app/core/constants/app_colors.dart';
@@ -15,6 +16,7 @@ class AdminTasksScreen extends StatefulWidget {
 
 class _AdminTasksScreenState extends State<AdminTasksScreen> {
   final _searchController = TextEditingController();
+  Timer? _debounceTimer;
   bool _isLoading = true;
   String _selectedStatus = 'all';
   DateTime? _selectedDate;
@@ -22,7 +24,7 @@ class _AdminTasksScreenState extends State<AdminTasksScreen> {
 
   final List<Map<String, String>> _statusFilters = const [
     {'label': 'All', 'value': 'all'},
-    {'label': '⚡ Urgent', 'value': 'urgent'},
+    {'label': 'Urgent', 'value': 'urgent'},
     {'label': 'Working', 'value': 'in_progress'},
     {'label': 'Assigned', 'value': 'assigned'},
     {'label': 'Completed', 'value': 'completed'},
@@ -37,8 +39,16 @@ class _AdminTasksScreenState extends State<AdminTasksScreen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String _) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 200), () {
+      _fetchTasks();
+    });
   }
 
   Future<void> _fetchTasks() async {
@@ -104,6 +114,7 @@ class _AdminTasksScreenState extends State<AdminTasksScreen> {
                 // Search Field
                 TextField(
                   controller: _searchController,
+                  onChanged: _onSearchChanged,
                   onSubmitted: (_) => _fetchTasks(),
                   decoration: InputDecoration(
                     hintText: 'Search task key, name, client, expert...',

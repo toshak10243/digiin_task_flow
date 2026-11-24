@@ -61,7 +61,7 @@ try {
     }
 
     // 3. Top BDE Performers
-    $topBDE = $db->query("
+    $rawTopBDE = $db->query("
         SELECT u.id, u.name, u.username, COUNT(t.id) total_tasks, COALESCE(SUM(t.word_count), 0) words
         FROM users u
         JOIN tasks t ON u.id = t.created_by
@@ -71,8 +71,18 @@ try {
         LIMIT 5
     ")->fetchAll(PDO::FETCH_ASSOC);
 
+    $topBDE = array_map(function($b) {
+        return [
+            'id' => (int)$b['id'],
+            'name' => $b['name'] ?: $b['username'],
+            'username' => $b['username'],
+            'total_tasks' => (int)$b['total_tasks'],
+            'words' => (int)$b['words'],
+        ];
+    }, $rawTopBDE);
+
     // 4. Top Operations Team Performers
-    $topTeam = $db->query("
+    $rawTopTeam = $db->query("
         SELECT u.id, u.name, u.username, COUNT(t.id) completed_tasks, COALESCE(SUM(t.word_count), 0) words
         FROM users u
         JOIN tasks t ON u.id = t.assigned_to
@@ -81,6 +91,16 @@ try {
         ORDER BY completed_tasks DESC
         LIMIT 5
     ")->fetchAll(PDO::FETCH_ASSOC);
+
+    $topTeam = array_map(function($t) {
+        return [
+            'id' => (int)$t['id'],
+            'name' => $t['name'] ?: $t['username'],
+            'username' => $t['username'],
+            'completed_tasks' => (int)$t['completed_tasks'],
+            'words' => (int)$t['words'],
+        ];
+    }, $rawTopTeam);
 
     // 5. Recent 5 Tasks
     $recentTasks = $db->query("
@@ -92,6 +112,18 @@ try {
         ORDER BY t.id DESC
         LIMIT 5
     ")->fetchAll(PDO::FETCH_ASSOC);
+
+    $recentTasks = array_map(function($r) {
+        $r['id'] = (int)$r['id'];
+        $r['word_count'] = (int)($r['word_count'] ?? 0);
+        return $r;
+    }, $recentTasks);
+
+    $dailyTasks = array_map(function($dt) {
+        $dt['id'] = (int)$dt['id'];
+        $dt['word_count'] = (int)($dt['word_count'] ?? 0);
+        return $dt;
+    }, $dailyTasks);
 
     // 6. Role breakdown
     $roleCounts = $db->query("

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:digiink_app/core/constants/app_colors.dart';
 import 'package:digiink_app/data/models/user_model.dart';
@@ -14,6 +15,7 @@ class AdminUsersScreen extends StatefulWidget {
 class _AdminUsersScreenState extends State<AdminUsersScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _searchController = TextEditingController();
+  Timer? _debounceTimer;
   bool _isLoading = true;
   List<UserModel> _users = [];
 
@@ -40,9 +42,17 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> with SingleTickerPr
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String _) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 200), () {
+      _fetchUsers();
+    });
   }
 
   String get _currentRole => _roleTabs[_tabController.index]['role']!;
@@ -273,6 +283,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> with SingleTickerPr
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: TextField(
               controller: _searchController,
+              onChanged: _onSearchChanged,
               onSubmitted: (_) => _fetchUsers(),
               decoration: InputDecoration(
                 hintText: 'Search by name or username...',

@@ -43,7 +43,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
   final List<AdminNotificationItem> _notifications = [
     AdminNotificationItem(
       id: '1',
-      title: '🚨 Urgent Task Priority Escalation',
+      title: 'Urgent Task Priority Escalation',
       message: 'Task DI/NOV26/PEARL/071 (Saputo Inc. Financial Case Study) marked as Urgent with 23:00 deadline.',
       time: '10 mins ago',
       type: 'urgent',
@@ -51,7 +51,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     ),
     AdminNotificationItem(
       id: '2',
-      title: '💬 Client Feedback & Screenshot Uploaded',
+      title: 'Client Feedback & Screenshot Uploaded',
       message: 'BDE Pearl added feedback & image proof for DI/NOV26/PEARL/071: "Include latest 2025 Q3 reports".',
       time: '35 mins ago',
       type: 'feedback',
@@ -59,7 +59,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     ),
     AdminNotificationItem(
       id: '3',
-      title: '📁 Additional Materials Attached',
+      title: 'Additional Materials Attached',
       message: 'Client provided supplemental CSV dataset on DI/NOV26/PEARL/068. Synchronized to Drive.',
       time: '2 hours ago',
       type: 'task',
@@ -67,7 +67,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     ),
     AdminNotificationItem(
       id: '4',
-      title: '✅ Quality Check Approved',
+      title: 'Quality Check Approved',
       message: 'QC Specialist Karan marked task DI/NOV26/JSR/028 as Completed and verified plagiarism score.',
       time: '4 hours ago',
       type: 'task',
@@ -75,7 +75,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     ),
     AdminNotificationItem(
       id: '5',
-      title: '⚡ Firebase Cloud Messaging Ready',
+      title: 'Firebase Cloud Messaging Ready',
       message: 'Desktop and Mobile push notifications service account is active and connected with token sync.',
       time: 'Yesterday',
       type: 'system',
@@ -83,7 +83,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     ),
     AdminNotificationItem(
       id: '6',
-      title: '🔄 Rework Request Submitted',
+      title: 'Rework Request Submitted',
       message: 'Task DI/NOV26/NAR/060 requires minor rework on supply chain bottleneck chapter.',
       time: 'Yesterday',
       type: 'urgent',
@@ -116,7 +116,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
             SizedBox(width: 10),
             Expanded(
               child: Text(
-                '🚀 Push Notification dispatched to admin devices successfully!',
+                'Push Notification dispatched to admin devices successfully!',
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               ),
             ),
