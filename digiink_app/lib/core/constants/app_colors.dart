@@ -37,5 +37,11 @@ class AppColors {
   static const Color roleTeam = Color(0xFF059669);
   static const Color roleBDE = Color(0xFFD97706);
   static const Color roleQC = Color(0xFF7C3AED);
+
+  // Aliases for convenience
+  static const Color accent = Color(0xFF6366F1);
+  static const Color bdeColor = roleBDE;
+  static const Color qcColor = roleQC;
+  static const Color managerColor = roleOM;
 }
 

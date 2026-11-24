@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
-import '../../data/models/user_model.dart';
-import '../../data/services/api_service.dart';
-import '../widgets/user_card.dart';
+import 'package:digiink_app/core/constants/app_colors.dart';
+import 'package:digiink_app/data/models/user_model.dart';
+import 'package:digiink_app/data/services/api_service.dart';
+import 'package:digiink_app/presentation/widgets/user_card.dart';
 
 class AdminUsersScreen extends StatefulWidget {
   const AdminUsersScreen({super.key});
@@ -165,7 +165,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> with SingleTickerPr
                 // Role Dropdown
                 DropdownButtonFormField<String>(
                   initialValue: selectedRole,
-                  decoration: const InputDecorationinitialValue                 labelText: 'System Role',
+                  decoration: const InputDecoration(
+                    labelText: 'System Role',
                     prefixIcon: Icon(Icons.security_rounded, size: 20),
                   ),
                   items: const [
@@ -220,7 +221,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> with SingleTickerPr
           ),
         ),
       ),
-    )
+    );
   }
 
   @override

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/api_endpoints.dart';
-import '../../core/constants/app_colors.dart';
-import '../../data/services/auth_service.dart';
-import '../admin/admin_main_screen.dart';
+import 'package:digiink_app/core/constants/api_endpoints.dart';
+import 'package:digiink_app/core/constants/app_colors.dart';
+import 'package:digiink_app/data/services/auth_service.dart';
+import 'package:digiink_app/presentation/screens/admin/admin_main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

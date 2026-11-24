@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../core/constants/app_colors.dart';
-import '../../data/models/admin_stats_model.dart';
-import '../../data/models/task_model.dart';
-import '../../data/services/api_service.dart';
-import '../../data/services/auth_service.dart';
-import '../widgets/stat_card.dart';
-import '../widgets/task_card.dart';
-import 'admin_task_detail_screen.dart';
+import 'package:digiink_app/core/constants/app_colors.dart';
+import 'package:digiink_app/data/models/admin_stats_model.dart';
+import 'package:digiink_app/data/models/task_model.dart';
+import 'package:digiink_app/data/services/api_service.dart';
+import 'package:digiink_app/data/services/auth_service.dart';
+import 'package:digiink_app/presentation/widgets/stat_card.dart';
+import 'package:digiink_app/presentation/widgets/task_card.dart';
+import 'package:digiink_app/presentation/screens/admin/admin_task_detail_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -25,7 +25,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<Map<String, dynamic>> _topBde = [];
   List<Map<String, dynamic>> _topTeam = [];
   List<TaskModel> _recentTasks = [];
-  List<TaskModel> _dailyTasks = [];
 
   @override
   void initState() {
@@ -45,7 +44,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       _topBde = data['top_bde'] ?? [];
       _topTeam = data['top_team'] ?? [];
       _recentTasks = data['recent_tasks'] ?? [];
-      _dailyTasks = data['daily_tasks'] ?? [];
       _isLoading = false;
     });
   }
@@ -161,7 +159,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
-          physics: const NeverScrollableScrollExceptionScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           childAspectRatio: 1.45,
@@ -504,7 +502,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         else
           ListView.separated(
             shrinkWrap: true,
-            physics: const NeverScrollableScrollExceptionScrollPhysics(),
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: _recentTasks.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (ctx, index) {

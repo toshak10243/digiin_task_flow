@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
-import '../../data/services/auth_service.dart';
-import '../auth/login_screen.dart';
-import 'admin_dashboard_screen.dart';
-import 'admin_tasks_screen.dart';
-import 'admin_users_screen.dart';
-import 'admin_reports_screen.dart';
-import 'admin_notifications_screen.dart';
+import 'package:digiink_app/core/constants/app_colors.dart';
+import 'package:digiink_app/data/services/auth_service.dart';
+import 'package:digiink_app/presentation/screens/auth/login_screen.dart';
+import 'package:digiink_app/presentation/screens/admin/admin_dashboard_screen.dart';
+import 'package:digiink_app/presentation/screens/admin/admin_tasks_screen.dart';
+import 'package:digiink_app/presentation/screens/admin/admin_users_screen.dart';
+import 'package:digiink_app/presentation/screens/admin/admin_reports_screen.dart';
+import 'package:digiink_app/presentation/screens/admin/admin_notifications_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});

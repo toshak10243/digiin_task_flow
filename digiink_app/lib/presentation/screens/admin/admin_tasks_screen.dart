@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../core/constants/app_colors.dart';
-import '../../data/models/task_model.dart';
-import '../../data/services/api_service.dart';
-import '../widgets/task_card.dart';
-import 'admin_task_detail_screen.dart';
+import 'package:digiink_app/core/constants/app_colors.dart';
+import 'package:digiink_app/data/models/task_model.dart';
+import 'package:digiink_app/data/services/api_service.dart';
+import 'package:digiink_app/presentation/widgets/task_card.dart';
+import 'package:digiink_app/presentation/screens/admin/admin_task_detail_screen.dart';
 
 class AdminTasksScreen extends StatefulWidget {
   const AdminTasksScreen({super.key});

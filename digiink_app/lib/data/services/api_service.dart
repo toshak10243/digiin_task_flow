@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../core/constants/api_endpoints.dart';
-import '../models/admin_stats_model.dart';
-import '../models/task_model.dart';
-import '../models/user_model.dart';
+import 'package:digiink_app/core/constants/api_endpoints.dart';
+import 'package:digiink_app/data/models/admin_stats_model.dart';
+import 'package:digiink_app/data/models/task_model.dart';
+import 'package:digiink_app/data/models/user_model.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();

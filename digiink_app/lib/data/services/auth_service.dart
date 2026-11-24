@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/user_model.dart';
-import '../../core/constants/api_endpoints.dart';
 import 'package:http/http.dart' as http;
+import 'package:digiink_app/data/models/user_model.dart';
+import 'package:digiink_app/core/constants/api_endpoints.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();

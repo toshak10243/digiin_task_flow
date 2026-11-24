@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
-import '../../data/models/task_model.dart';
+import 'package:digiink_app/core/constants/app_colors.dart';
+import 'package:digiink_app/data/models/task_model.dart';
 
 class TaskCard extends StatelessWidget {
   final TaskModel task;
